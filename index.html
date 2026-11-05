@@ -70,6 +70,40 @@
   .kort button { font-size: 16px; padding: 9px 14px; margin-top: 10px; border-radius: 14px; width: 100%; box-shadow: 0 4px 0 #a8195a; }
   .kort button:disabled { box-shadow: 0 4px 0 #d3b2c1; }
   .kort button.er-valgt:disabled { background: #7bc67b; box-shadow: 0 4px 0 #5aa05a; }
+  /* --- Duel --- */
+  #duelmenu, #duelrunde { overflow-y: auto; justify-content: safe center; }
+  @media (max-height: 520px) {
+    #duelmenu, #duelrunde { padding: 8px; }
+    #duelmenu h2 { font-size: 26px; margin: 0 0 6px; }
+    #duelmenu .boks, #duelrunde .boks { padding: 8px 18px 10px; }
+    #duelmenu .hjaelp { display: none; }
+    .valglinje { margin: 4px 0 8px; }
+    .valglinje button { font-size: 16px; padding: 7px 16px; }
+    select { font-size: 16px; padding: 6px 10px; }
+    #duelmenu .knapper, #duelrunde .knapper { margin-top: 10px; }
+    #duelmenu button, #duelrunde button { font-size: 18px; padding: 9px 24px; }
+    #duelrunde .linje { font-size: 16px; margin: 2px 0; }
+    #duelrunde.stor #dTitel { font-size: 34px; }
+    #dTitel { font-size: 26px; }
+    #knapTing { width: 84px; height: 84px; font-size: 14px; }
+  }
+  .valglinje { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 8px 0 14px; }
+  .valglinje button { font-size: 19px; padding: 10px 22px; box-shadow: 0 5px 0 #e58ab6, 0 8px 14px rgba(0,0,0,.2); background: linear-gradient(#fff, #ffe3f0); color: #ff3f8a; text-shadow: none; }
+  .valglinje button.valgt { background: linear-gradient(#ff7cb4, #ff3f8a 55%, #e82a78); color: #fff; box-shadow: 0 5px 0 #a8195a, 0 8px 14px rgba(0,0,0,.25); text-shadow: 0 2px 0 rgba(120,10,60,.5); }
+  .valgtitel { font-size: 17px; font-weight: bold; color: #b0185a; margin-top: 6px; }
+  select { font: inherit; font-weight: bold; font-size: 19px; padding: 9px 14px; border-radius: 14px; border: 3px solid #ff8cc0; color: #5a2a45; background: #fff; max-width: 80vw; }
+  #duelrunde .linje { font-size: clamp(18px, 4.6vw, 24px); font-weight: bold; margin: 5px 0; }
+  #duelrunde.stor #dTitel { font-size: clamp(40px, 11vw, 80px); line-height: 1; margin-bottom: 12px; }
+  #duelrunde.stor .boks { padding: 24px 40px 26px; }
+  #dTitel { color: #ff3f8a; text-shadow: 0 3px 0 #fff; margin: 0 0 8px; }
+  #dBeloenning { font-size: clamp(22px, 6vw, 30px); color: #e08a00; font-weight: bold; margin: 8px 0; text-shadow: 0 2px 0 #fff; }
+  #knapTing {
+    position: fixed; right: max(14px, env(safe-area-inset-right)); bottom: max(18px, env(safe-area-inset-bottom)); width: 104px; height: 104px; border-radius: 50%; padding: 0;
+    display: none; z-index: 5; font-size: 16px; line-height: 1.15; background: linear-gradient(#ffe98a, #ffb81f 60%, #ff9a00); color: #7a2a00; text-shadow: none;
+    box-shadow: 0 6px 0 #b86a00, 0 10px 18px rgba(0,0,0,.3);
+  }
+  #knapTing.vis { display: block; }
+  #knapTing.tom { opacity: .35; }
 </style>
 </head>
 <body>
@@ -81,6 +115,7 @@
   <div class="panel tal" id="startDonuts">Donuts: 0</div>
   <div class="knapper">
     <button id="knapStart">Start</button>
+    <button id="knapDuel" class="anden">Duel</button>
     <button id="knapGarage" class="anden">Garage</button>
   </div>
   <div class="hjaelp">
@@ -117,6 +152,39 @@
   <div id="gitter"></div>
 </div>
 
+<div id="duelmenu" class="skaerm">
+  <h2>Duel</h2>
+  <div class="boks">
+    <div class="valgtitel">Hvor god er modstanderen?</div>
+    <div class="valglinje" id="svValg">
+      <button data-sv="let">Let</button><button data-sv="mellem">Mellem</button><button data-sv="svaer">Svær</button>
+    </div>
+    <div class="valgtitel">Modstanderens donut</div>
+    <div class="valglinje"><select id="aiDonutValg"></select></div>
+    <div class="hjaelp" style="color:#5a2a45;text-shadow:none;margin-top:8px">Først i mål efter <b id="duelLen">1500</b> m vinder. Bedst af <b id="duelRun">3</b> runder.<br>Kør igennem gaveæsker og brug tingen med E, Shift eller den store knap.</div>
+  </div>
+  <div class="knapper">
+    <button id="knapDuelStart">Start duel</button>
+    <button id="knapDuelTilbage" class="anden">Tilbage</button>
+  </div>
+</div>
+
+<div id="duelrunde" class="skaerm">
+  <div class="boks">
+    <h2 id="dTitel">Runde 1</h2>
+    <div class="linje" id="dLinje1"></div>
+    <div class="linje" id="dLinje2"></div>
+    <div class="linje" id="dLinje3"></div>
+    <div id="dBeloenning" style="display:none"></div>
+  </div>
+  <div class="knapper">
+    <button id="dKnap1">Næste runde</button>
+    <button id="dKnap2" class="anden" style="display:none">Tilbage til menuen</button>
+  </div>
+</div>
+
+<button id="knapTing">Ting</button>
+
 <script>
 (function () {
 "use strict";
@@ -148,6 +216,33 @@ const RAMPE_HOP_TID = 1.25;            // hvor længe et rampehop varer (sekunde
 const RAMPE_HOEJDE = 3.6;              // hvor højt et rampehop går (meter)
 const HOP_HOEJDE = 1.5;                // hvor højt et almindeligt hop går (meter)
 const MOENSTER_HAARDHED = 1;           // 0 = kun de lette banestykker, 1 = normal blanding
+/* --- Duel (1 mod 1 mod AI) --- */
+const DUEL_LAENGDE = 1500;             // løbets længde i meter. Kortere = hurtigere runder
+const DUEL_RUNDER = 3;                 // bedst af så mange runder
+const DUEL_BELOENNING_SEJR = 25;       // donuts for at vinde duellen
+const DUEL_BELOENNING_TAB = 5;         // donuts for at tabe duellen
+const DUEL_STOED_TID = 1.0;            // hvor længe man er langsom efter et stød (sekunder)
+const DUEL_STOED_FART = 0.45;          // farten ganges med dette efter et stød. Højere = lettere
+const DUEL_FLOD_STRAF = 2.0;           // tidsstraf i sekunder, hvis man ryger i chokoladefloden
+const GAVE_HJAELP = 0.6;               // 0 = ingen hjælp, 1 = den bagud får meget bedre ting
+const GUMMIBAAND = 0.08;               // 0 = slået fra. Den langt bagud får op til så meget ekstra fart
+const TURBO_TID = 1.6;                 // Turbosukker varer så mange sekunder
+const TURBO_FART = 1.5;                // Turbosukker: farten ganges med dette
+const BOMBE_SNURRE = 1.5;              // hvor længe en ramt snurrer rundt (sekunder)
+const BOMBE_RAEKKEVIDDE = 60;          // hvor langt Glasurbomben flyver (meter)
+const POL_TID = 25;                    // hvor længe en Karamelpøl ligger (sekunder)
+const POL_BREMSE = 0.5;                // farten ganges med dette i en Karamelpøl
+const POL_BREMSE_TID = 1.5;            // hvor længe man bremses (sekunder)
+const SKJOLD_TID = 8;                  // hvor længe Sukkerskjoldet holder (sekunder)
+const SIM_HZ = 120;                    // spillets faste opdateringer pr. sekund (uafhængigt af skærmen)
+/* AI-modstanderens niveauer. fart = farttillæg/-fradrag, reaktion = sekunder mellem beslutninger,
+   fejl = chance for at vælge forkert, hopFejl = meter ved timing af hop, ting = hvor godt tingene bruges */
+const AI_SV = {
+  let:    { navn: "Let",    fart: 0.97, reaktion: 0.45, fejl: 0.22, hopFejl: 2.4, ting: 0.45 },
+  mellem: { navn: "Mellem", fart: 1.00, reaktion: 0.28, fejl: 0.10, hopFejl: 1.2, ting: 0.75 },
+  svaer:  { navn: "Svær",   fart: 1.05, reaktion: 0.16, fejl: 0.03, hopFejl: 0.5, ting: 1.00 }
+};
+const AI_NAVNE = ["Sukker-Sofie", "Lakrids-Lasse", "Karamel-Kim", "Glasur-Gitte", "Krymmel-Karl"];
 
 /* =====================================================================
    ALLE DONUTS I GARAGEN
@@ -214,7 +309,7 @@ const FONT = '"Arial Rounded MT Bold", "Trebuchet MS", "Segoe UI", system-ui, sa
 
 /* ---------- Gemte data (localStorage) - samme nøgle som før ---------- */
 const GEM_NOEGLE = "donutRider_v1";
-let gemt = { donuts: 0, ejede: ["almindelig"], valgt: "almindelig", rekord: 0 };
+let gemt = { donuts: 0, ejede: ["almindelig"], valgt: "almindelig", rekord: 0, duel: { sv: "mellem", ai: "tilfaeldig" } };
 
 function findDonut(id) {
   for (let i = 0; i < DONUTS.length; i++) if (DONUTS[i].id === id) return DONUTS[i];
@@ -234,6 +329,10 @@ function hentGemt() {
       });
     }
     if (typeof d.valgt === "string" && gemt.ejede.indexOf(d.valgt) >= 0) gemt.valgt = d.valgt;
+    if (d.duel && typeof d.duel === "object") {
+      if (AI_SV[d.duel.sv]) gemt.duel.sv = d.duel.sv;
+      if (d.duel.ai === "tilfaeldig" || DONUTS.some(function (x) { return x.id === d.duel.ai; })) gemt.duel.ai = d.duel.ai;
+    }
   } catch (e) { /* localStorage findes ikke - spillet virker stadig */ }
 }
 function gemNu() {
@@ -245,7 +344,9 @@ function tal(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, 
 function klem(v, a, b) { return v < a ? a : (v > b ? b : v); }
 function lerp(a, b, t) { return a + (b - a) * t; }
 function tilf(i) { const s = Math.sin(i * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }
-function rnd(a, b) { return a + Math.random() * (b - a); }
+let rng = Math.random;      // banegeneratorens tilfældighed (seedet i duel, så begge ser samme bane)
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function rnd(a, b) { return a + rng() * (b - a); }
 function smooth(t) { t = klem(t, 0, 1); return t * t * (3 - 2 * t); }
 function el(id) { return document.getElementById(id); }
 const _rc = {};
@@ -272,7 +373,7 @@ function seg(i) { return segs[i - segBase]; }
 function fartVed(m) { return Math.min(MAKS_FART, START_FART + m * FART_STIGNING); }
 function afstandVed(m) { return Math.max(FORHINDRING_AFSTAND_MIN, FORHINDRING_AFSTAND_START - m * FORHINDRING_AFSTAND_FALD); }
 
-function nyGen() { gen = { i: 0, y: 0, w: 1, sidste: "", sidsteFlod: false }; segs = []; segBase = 0; }
+function nyGen() { gen = { i: 0, y: 0, w: 1, sidste: "", sidsteFlod: false, nid: 0 }; segs = []; segBase = 0; }
 
 function nySeg(y, curve, w) {
   const i = gen.i++;
@@ -300,10 +401,10 @@ function lavTerraen(n, kurve, dy, wMaal) {
 }
 
 /* Hjælpere der sætter ting på banen. k = hvor langt inde i stykket (i banestykker). */
-function put(s0, k, o) { const sg = seg(s0 + Math.floor(k)); o.pos = (s0 + k) * SEG; sg.ting.push(o); return o; }
+function put(s0, k, o) { const sg = seg(s0 + Math.floor(k)); o.pos = (s0 + k) * SEG; o.id = gen.nid++; sg.ting.push(o); return o; }
 function halv(s0, k) { return BANE_HALV * seg(s0 + Math.floor(k)).w; }
 function bx(s0, k, f) { return f * (halv(s0, k) - 1.1); }
-function lol(s0, k, f) { put(s0, k, { tp: "slik", x: bx(s0, k, f), farve: Math.floor(Math.random() * SLIK_FARVER.length), ramt: false }); }
+function lol(s0, k, f) { put(s0, k, { tp: "slik", x: bx(s0, k, f), farve: Math.floor(rng() * SLIK_FARVER.length), ramt: false }); }
 function bar(s0, k, side, daekker) {
   const h = halv(s0, k); daekker = Math.min(daekker, 2 * h - 3.4);
   const x1 = side < 0 ? -h : (side > 0 ? h - daekker : -daekker / 2);
@@ -323,7 +424,7 @@ function frit(s0, k, x) {
 }
 function moent(s0, k, f, h) {
   const x = bx(s0, k, f);
-  if (h > 1.5 || frit(s0, k, x)) put(s0, k, { tp: "donut", x: x, h: h, vaek: false, fase: Math.random() * 6.28 });
+  if (h > 1.5 || frit(s0, k, x)) put(s0, k, { tp: "donut", x: x, h: h, vaek: false, fase: rng() * 6.28 });
 }
 function raekke(s0, k0, k1, f0, f1, n, h) {
   for (let i = 0; i < n; i++) {
@@ -343,7 +444,7 @@ const MOENSTRE = [
     bygg: function (s0, n) { let f = -0.65; for (let k = 8; k < n - 6; k += 11) { lol(s0, k, f); f = -f; } slange(s0, 6, n - 6, 0.5, 8, 0.6); } },
   { navn: "lakridsraekke", fra: 50, v: 5, len: function () { return 40; }, kurve: { a: 0, f: "bump" }, dy: 0, w: 1,
     bygg: function (s0, n) {
-      const sd = Math.random() < 0.5 ? -1 : 1;
+      const sd = rng() < 0.5 ? -1 : 1;
       bar(s0, 11, sd, rnd(4, 6));
       raekke(s0, 9, 13, sd * 0.4, sd * 0.4, 3, function (u) { return 1.0 + 1.1 * Math.sin(u * Math.PI); });
       bar(s0, 28, -sd, rnd(4, 6));
@@ -372,7 +473,7 @@ const MOENSTRE = [
   { navn: "skov", fra: 300, v: 4, len: function () { return 66; }, kurve: { a: 0.005, f: "sin2" }, dy: 0, w: 1,
     bygg: function (s0, n) { const fs = [-0.7, 0.1, 0.8, -0.2, 0.6, -0.8]; for (let i = 0; i < fs.length; i++) lol(s0, 8 + i * 9, fs[i]); } },
   { navn: "bakkeSving", fra: 200, v: 4, len: function () { return 72; }, kurve: { a: 0.009, f: "bump" }, dy: 6, bakke: true, w: 1,
-    bygg: function (s0, n) { lol(s0, 24, rnd(-0.7, 0.7)); bar(s0, 46, Math.random() < 0.5 ? -1 : 1, 5); slange(s0, 8, n - 8, 0.5, 9, 0.6); } }
+    bygg: function (s0, n) { lol(s0, 24, rnd(-0.7, 0.7)); bar(s0, 46, rng() < 0.5 ? -1 : 1, 5); slange(s0, 8, n - 8, 0.5, 9, 0.6); } }
 ];
 const FLOD_MOENSTER = { navn: "flod", len: function (fart) { return flodFoer(fart) + FLOD_SEGS + flodEfter(fart); }, kurve: { a: 0, f: "bump" }, dy: 0, w: 1 };
 function flodFoer(fart) { return Math.ceil(Math.max(14, fart * FARTFELT_FART * 1.1) / SEG); }
@@ -384,7 +485,7 @@ function kurveVaerdi(k, t, dir) {
 }
 
 function lavMoenster(m, fart, pos) {
-  const dir = Math.random() < 0.5 ? -1 : 1;
+  const dir = rng() < 0.5 ? -1 : 1;
   let dy = m.dy * BAKKE_STYRKE;
   if (dy) { dy = (gen.y > 6 ? -1 : (gen.y < -6 ? 1 : dir)) * dy; }
   const n = m.len(fart);
@@ -405,9 +506,16 @@ function lavMellemrum(fart, pos, minSegs) {
   let n = Math.ceil(afstandVed(pos) / SEG * rnd(0.85, 1.25));
   n = Math.max(n, minSegs || 0, 6);
   const s0 = lavTerraen(n, function () { return 0; }, 0, gen.w);
-  if (!tomBane && n > 12 && Math.random() < DONUT_CHANCE) raekke(s0, 3, n - 3, rnd(-0.8, 0.8), rnd(-0.8, 0.8), Math.min(6, Math.floor(n / 3)), 0.6);
+  if (!tomBane) lavGaveraekke(s0, n);
+  if (!tomBane && n > 12 && rng() < DONUT_CHANCE) raekke(s0, 3, n - 3, rnd(-0.8, 0.8), rnd(-0.8, 0.8), Math.min(6, Math.floor(n / 3)), 0.6);
 }
 
+let duelBane = false;       // true = bygg gaveæsker på banen
+function lavGaveraekke(s0, n) {
+  if (!duelBane || n < 14) return;
+  const k = Math.floor(n * 0.5);
+  for (let i = -1; i <= 1; i++) put(s0, k, { tp: "gave", x: bx(s0, k, i * 0.5), vaek: false, fase: i });
+}
 function vaelgMoenster(km) {
   const kan = [];
   let sum = 0;
@@ -418,14 +526,14 @@ function vaelgMoenster(km) {
     if (km < fra && m.fra > 0) continue;
     kan.push(m); sum += m.v;
   }
-  let r = Math.random() * sum;
+  let r = rng() * sum;
   for (let i = 0; i < kan.length; i++) { r -= kan[i].v; if (r <= 0) return kan[i]; }
   return kan[0];
 }
 
 function lavNaeste() {
   const pos = gen.i * SEG, km = Math.max(0, pos - START_Z), fart = fartVed(km);
-  const flod = !gen.sidsteFlod && km >= FLOD_FRA_METER && Math.random() < FLOD_CHANCE;
+  const flod = !gen.sidsteFlod && km >= FLOD_FRA_METER && rng() < FLOD_CHANCE;
   lavMellemrum(fart, km, flod ? 0 : 0);
   const m = flod ? FLOD_MOENSTER : vaelgMoenster(km);
   lavMoenster(m, fart, km);
@@ -434,8 +542,10 @@ function lavNaeste() {
 
 function byggTil(z) { while (gen.i * SEG < z) lavNaeste(); }
 
-function startBane(tom) {
+function startBane(tom, seed) {
   tomBane = !!tom;
+  rng = seed === undefined ? Math.random : mulberry32(seed);
+  duelBane = seed !== undefined && !tom;
   nyGen();
   const s0 = lavTerraen(40, function () { return 0; }, 0, 1);
   if (!tomBane) raekke(s0, 14, 34, 0, 0, 5, 0.6);
@@ -851,7 +961,7 @@ function tegnVerden(P) {
   for (let n = N - 1; n >= 0; n--) {
     const s = seg(baseI + n);
     if (s.skjul && n !== pn) continue;
-    const harIndhold = s.dek.length || s.ting.length || s.bue || s.flod || n === pn;
+    const harIndhold = s.dek.length || s.ting.length || s.bue || s.flod || n === pn || (duelAktiv && (s.i === maalI || duelHarSeg(s.i)));
     if (!harIndhold) continue;
     const kl = s.clip < H - 1;
     if (kl) { c.save(); c.beginPath(); c.rect(-50, -50, W + 100, s.clip + 50 + 0.05 * H); c.clip(); }
@@ -914,6 +1024,8 @@ function tegnSegIndhold(s, n) {
       c.strokeStyle = "rgba(255,120,170,.75)"; c.lineWidth = Math.max(1.5, hh * 0.1);
       const cnt = Math.max(2, Math.floor((bx2 - ax) / (hh * 1.1)));
       for (let q = 0; q < cnt; q++) { const px = ax + (bx2 - ax) * (q + 0.5) / cnt; c.beginPath(); c.moveTo(px - hh * 0.2, ay - hh * 0.9); c.lineTo(px + hh * 0.2, ay - hh * 0.1); c.stroke(); }
+    } else if (t.tp === "gave") {
+      if (!t.vaek) tegnGave(s, t, tt);
     } else if (t.tp === "donut" && !t.vaek) {
       if (!place(s, tt, t.x, 2.2)) continue;
       const sc = PL.sc, r = 0.45 * sc, lift = t.h * sc * KY;
@@ -924,6 +1036,7 @@ function tegnSegIndhold(s, n) {
       if (Math.abs(Math.cos(spin)) > 0.9) { c.fillStyle = "rgba(255,255,255,.8)"; c.fillRect(PL.x - r * 0.1, cy2 - r * 0.9, r * 0.2, r * 0.2); }
     }
   }
+  if (duelAktiv) tegnDuelSeg(s);
 }
 
 function tegnSpiller(s, ps) {
@@ -949,6 +1062,7 @@ function tegnSpiller(s, ps) {
   const sx = 1 + 0.2 * landSq - 0.06 * hf, sy = 1 - 0.24 * landSq + 0.1 * hf;
   tegnDonut3D(c, px, pyG - yHop - r * 0.5 * (1 - 0) + sink, r, donut, bidder, rot, { flat: 0.84, lean: lean, sx: sx, sy: sy, tid: tid, tykkelse: r * 0.2 });
   c.globalAlpha = 1;
+  if (duelAktiv && pl.skjoldT > 0) tegnSkjold(px, pyG - yHop - r * 0.5 + sink, r, pl.skjoldT);
 }
 
 function tegnSpor(sP) {
@@ -1013,7 +1127,7 @@ function tegnHud() {
   const g = c.createLinearGradient(0, y0, 0, y0 + h); g.addColorStop(0, "#ffffff"); g.addColorStop(1, "#ffe2f0"); c.fillStyle = g; c.fill();
   c.strokeStyle = "#ff8cc0"; c.lineWidth = 3; c.stroke();
   const kol = b / 3; c.textBaseline = "middle"; c.textAlign = "center";
-  const navne = ["METER", "DONUTS", "BIDDER"];
+  const navne = ["METER", "DONUTS", duelAktiv ? "PLADS" : "BIDDER"];
   c.font = "bold 11px " + FONT; c.fillStyle = "#c2578f";
   for (let i = 0; i < 3; i++) c.fillText(navne[i], x0 + kol * (i + 0.5), y0 + 15);
   c.fillStyle = "#5a2a45"; c.font = "bold 24px " + FONT;
@@ -1023,14 +1137,15 @@ function tegnHud() {
   c.save(); c.translate(x0 + kol * 1.5 - 4, y0 + 40); c.scale(pop, pop); c.textAlign = "left"; c.fillStyle = "#e0407f"; c.fillText(tal(samlet), 0, 0); c.restore();
   const bs = donutSprite(donut, bidder);
   c.drawImage(bs, x0 + kol * 2.5 - 52, y0 + 40 - 17, 34, 34);
-  c.textAlign = "left"; c.fillStyle = "#5a2a45"; c.fillText(bidder + " / " + maksBidder, x0 + kol * 2.5 - 14, y0 + 40);
+  c.textAlign = "left"; c.fillStyle = "#5a2a45";
+  c.fillText(duelAktiv && mod ? ((zp >= mod.z ? 1 : 2) + " / 2") : (bidder + " / " + maksBidder), x0 + kol * 2.5 - 14, y0 + 40);
   c.restore();
 }
 
 function tegnZoneBanner() {
   if (!zoneBanner) return;
   const t = zoneBanner.t, a = t > 2.2 ? (2.6 - t) / 0.4 : Math.min(1, t / 0.4);
-  const sz = Math.min(W * 0.1, 56), y = H * 0.24 + (1 - smooth(a)) * -20;
+  const sz = Math.min(W * 0.1, 56), y = H * (duelAktiv ? 0.55 : 0.24) + (1 - smooth(a)) * -20;
   c.save(); c.globalAlpha = klem(a, 0, 1); c.textAlign = "center"; c.textBaseline = "middle";
   c.font = "bold " + Math.round(sz) + "px " + FONT; c.lineJoin = "round"; c.lineWidth = sz * 0.18; c.strokeStyle = "#a8195a";
   c.strokeText(zoneBanner.txt, W / 2, y); c.fillStyle = "#ffffff"; c.fillText(zoneBanner.txt, W / 2, y);
@@ -1059,12 +1174,16 @@ function tegn() {
   c.setTransform(dpr, 0, 0, dpr, 0, 0);
   if (shake > 0.01) c.translate((Math.random() - 0.5) * shake * 16, (Math.random() - 0.5) * shake * 16);
   const P = palNu();
+  duelFrameStart();
   tegnHimmel(P);
   tegnVerden(P);
+  if (duelAktiv) tegnDuelEfter();
+  opdaterTingKnap();
   const koerer = tilstand === "nedtaelling" || tilstand === "koerer" || tilstand === "slutter";
   if (tilstand === "koerer") tegnFartstreger();
   tegnPartikler();
   if (koerer) tegnHud();
+  if (duelAktiv && (tilstand === "nedtaelling" || tilstand === "koerer")) tegnDuelHud();
   if (tilstand === "koerer") tegnZoneBanner();
   if (tilstand === "nedtaelling" || tilstand === "koerer") tegnNedtaelling();
   if (tilstand === "garage") tegnForhaand();
@@ -1085,9 +1204,9 @@ let hopTidNormal = HOP_TID, hopHoejdeNormal = HOP_HOEJDE, sidsteZone = 0, stoevT
 const taster = { venstre: false, hoejre: false };
 const pegere = new Map();
 
-function aktuelFart() { return fartVed(kmNu()) * (donut.evne === "langsom" ? 0.9 : 1) * speedMul; }
+function aktuelFart() { return fartVed(kmNu()) * (donut.evne === "langsom" ? 0.9 : 1) * speedMul * (duelAktiv && mod ? effektFart(pl) * gummi(zp, mod.z) : 1); }
 
-function nulstilScene(tom) {
+function nulstilScene(tom, seed) {
   donut = findDonut(gemt.valgt);
   maksBidder = bidder = donut.bidder;
   zp = START_Z; samlet = 0; playerX = 0; spillerVX = 0; hopTid = 0; blink = 0; hopStartH = 0; speedMul = 1; landSq = 0; lean = 0;
@@ -1095,12 +1214,13 @@ function nulstilScene(tom) {
   const lang = donut.evne === "superhop" ? 1.7 : (donut.evne === "hop" ? 1.25 : 1);
   hopTidNormal = HOP_TID * lang; hopHoejdeNormal = HOP_HOEJDE * Math.pow(lang, 0.8);
   hopVarighed = hopTidNormal; hopMax = hopHoejdeNormal;
-  startBane(tom);
+  startBane(tom, seed);
   byggTil(zp + SEG_SYN * SEG + 60);
   camX = 0; camY = grundY(zp) + KAMERA_HOEJDE;
 }
 
 function startLoeb() {
+  duelAktiv = false; D = null; mod = null; dyn = [];
   nulstilScene(false);
   nedTid = 0;
   tilstand = "nedtaelling";
@@ -1109,6 +1229,7 @@ function startLoeb() {
 }
 
 function tilMenu() {
+  duelAktiv = false;
   nulstilScene(true);
   tilstand = "menu";
   el("startRekord").textContent = "Rekord: " + tal(gemt.rekord) + " m";
@@ -1117,7 +1238,7 @@ function tilMenu() {
 }
 
 function visSkaerm(navn) {
-  ["start", "slut", "garage"].forEach(function (id) { el(id).className = "skaerm" + (id === navn ? " vis" : ""); });
+  ["start", "slut", "garage", "duelmenu", "duelrunde"].forEach(function (id) { el(id).className = "skaerm" + (id === navn ? " vis" : ""); });
 }
 
 /* ---------- Styring ---------- */
@@ -1129,7 +1250,7 @@ function styreRetning() {
   return klem(r, -1, 1);
 }
 function hop() {
-  if (tilstand === "koerer" && hopTid <= 0) {
+  if (tilstand === "koerer" && hopTid <= 0 && !(duelAktiv && (pl.penT > 0 || pl.snurT > 0))) {
     hopVarighed = hopTidNormal; hopMax = hopHoejdeNormal; hopStartH = 0; hopTid = hopVarighed;
     stoevSky(10);
   }
@@ -1139,6 +1260,7 @@ window.addEventListener("keydown", function (e) {
   if (k === "ArrowLeft" || k === "a" || k === "A") { taster.venstre = true; if (iSpil) e.preventDefault(); }
   else if (k === "ArrowRight" || k === "d" || k === "D") { taster.hoejre = true; if (iSpil) e.preventDefault(); }
   else if (k === "ArrowUp" || k === " " || k === "Spacebar" || k === "w" || k === "W") { if (iSpil) { e.preventDefault(); if (!e.repeat) hop(); } }
+  else if ((k === "e" || k === "E" || k === "Shift") && duelAktiv) { e.preventDefault(); if (!e.repeat) brugTingPl(); }
   else if (k === "Enter") { if (tilstand === "menu" || tilstand === "slut") { e.preventDefault(); startLoeb(); } }
 });
 window.addEventListener("keyup", function (e) {
@@ -1175,6 +1297,7 @@ function stoevSky(n) {
 function lavKrummer(antal, farver, kraft) { spawn(spilSkala.x, spilSkala.y - spilSkala.r * 0.5, antal, farver, kraft, { str: 4, liv: 0.9 }); }
 
 function stoed() {
+  if (duelAktiv) { duelStoed(); return; }
   bidder--;
   shake = 1;
   if (bidder <= 0) {
@@ -1231,9 +1354,10 @@ function kameraFoelg(dt) {
   camX += (playerX * 0.6 - camX) * klem(dt * 9, 0, 1);
 }
 function ryd() {
-  const gl = Math.floor((zp - KAMERA_BAGUD) / SEG) - 8;
+  const mz = duelAktiv && mod ? mod.z : zp;
+  const gl = Math.floor((Math.min(zp, mz) - KAMERA_BAGUD) / SEG) - 8;
   while (segs.length && segBase < gl) { segs.shift(); segBase++; }
-  byggTil(zp + SEG_SYN * SEG + 40);
+  byggTil(Math.max(zp, mz) + SEG_SYN * SEG + 40);
 }
 
 function opdater(dt) {
@@ -1244,7 +1368,8 @@ function opdater(dt) {
   if (popT > 0) popT = Math.max(0, popT - dt * 4);
   if (zoneBanner) { zoneBanner.t += dt; if (zoneBanner.t > 2.6) zoneBanner = null; }
 
-  if (tilstand === "menu" || tilstand === "garage") { // rolig kørsel i baggrunden
+  if (tilstand === "duelSkaerm") { rot += dt * 0.6; kameraFoelg(dt); return; }
+  if (tilstand === "menu" || tilstand === "garage" || tilstand === "duelmenu") { // rolig kørsel i baggrunden
     const f = 9; zp += f * dt; fartNu = f; rot += dt * 2.2;
     const s = seg(Math.floor(zp / SEG)); if (s) bgShift += s.curve * f * 420 * dt;
     playerX = Math.sin(tid * 0.7) * 2.2; spillerVX = Math.cos(tid * 0.7) * 1.5; lean = spillerVX * 0.05 - (s ? s.curve * 6 : 0);
@@ -1255,7 +1380,7 @@ function opdater(dt) {
   if (tilstand === "slutter") { slutTid += dt; if (slutTid > 1.1) visSlut(); return; }
   if (tilstand === "nedtaelling") {
     nedTid += dt; rot += dt * 0.6; kameraFoelg(dt);
-    if (nedTid >= 2.4) { tilstand = "koerer"; zoneBanner = { txt: ZONER[0].navn, t: 0 }; }
+    if (nedTid >= 2.4) { tilstand = "koerer"; zoneBanner = { txt: ZONER[0].navn, t: 0 }; if (duelAktiv) { D.fase = "loeb"; D.t = 0; } }
     return;
   }
 
@@ -1297,7 +1422,7 @@ function opdater(dt) {
   const i0 = Math.floor(foer / SEG) - 3, i1 = Math.floor(zp / SEG) + 3;
   for (let i = i0; i <= i1 && tilstand === "koerer"; i++) {
     const s = seg(i); if (!s) continue;
-    if (s.flod && !iLuften && s.i * SEG <= zp && (s.i + 1) * SEG >= foer) { afslut("flod"); break; }
+    if (s.flod && !iLuften && s.i * SEG <= zp && (s.i + 1) * SEG >= foer) { if (duelAktiv) duelFlod(s); else afslut("flod"); break; }
     for (let j = 0; j < s.ting.length; j++) {
       const t = s.ting[j];
       if (t.tp === "donut") {
@@ -1313,6 +1438,8 @@ function opdater(dt) {
           spawn(spilSkala.x, spilSkala.y - spilSkala.r * (1 + t.h), 10, ["#ffffff", "#ffe14d", "#ff8fc7"], 200, { form: 2, str: 3.5, g: 300, liv: 0.5 });
           tekster.push({ x: spilSkala.x, y: spilSkala.y - spilSkala.r * 2.4, txt: "+" + gevinst, liv: 0.9, farve: donut.evne === "dobbelt" ? "#ffd23f" : "#fff4a8" });
         }
+      } else if (t.tp === "gave") {
+        if (!t.vaek && Math.abs(t.x - playerX) < 1.1 && Math.abs(hh) < 1.5 && t.pos - 0.8 <= zp && t.pos + 0.8 >= foer) { t.vaek = true; duelGave(t); }
       } else if (t.tp === "slik") {
         if (!t.ramt && blink <= 0 && Math.abs(t.x - playerX) < 0.55 + RAMME_R && t.pos - 0.6 <= zp && t.pos + 0.6 >= foer) { t.ramt = true; stoed(); }
       } else if (t.tp === "lakrids") {
@@ -1320,6 +1447,8 @@ function opdater(dt) {
       }
     }
   }
+  if (tilstand !== "koerer") return;
+  if (duelAktiv) duelTik(dt);
   if (tilstand !== "koerer") return;
 
   if (donut.evne === "regnbue") { spor.push({ x: playerX, pos: zp }); while (spor.length && spor[0].pos < zp - 6) spor.shift(); }
@@ -1338,6 +1467,7 @@ function sætForhaand(id) {
   el("fhInfo").innerHTML = "Pris: " + (d.pris === 0 ? "gratis" : tal(d.pris) + " donuts") + "<br>Bidder: " + d.bidder + "<br>Ekstra: " + d.ekstra;
 }
 function visGarage() {
+  duelAktiv = false;
   nulstilScene(true);
   tilstand = "garage";
   el("garageDonuts").textContent = "Du har " + tal(gemt.donuts) + " donuts";
@@ -1380,12 +1510,695 @@ el("knapGarage").addEventListener("click", visGarage);
 el("knapGarage2").addEventListener("click", visGarage);
 el("knapTilbage").addEventListener("click", tilMenu);
 
+
+/* =====================================================================
+   DUEL: fælles regler, ting, modstander-interface og AI
+   Duellens simulering taler kun med "mod" (modstander-interfacet), så den ved ikke,
+   om det er en AI eller (senere) et menneske over nettet.
+
+   MODSTANDER-INTERFACE (det en netværks-modstander også skal kunne):
+     mod.navn, mod.donut                    udseende
+     mod.opdater(dt, ctx)                   AI: kør et fast tidsskridt. Netværk: interpolér pakker
+     mod.snap(t)                            position (z, x), fart, hopH, skjold, ting, snur ... ved tidspunkt t
+     mod.send(ev)                           modtag hændelse fra mig (fx "bombe_ramt")
+     mod.hent()                             hent hændelser modstanderen har lavet siden sidst
+   HÆNDELSER: { type, seq, t, ... }  type = "gave" | "ting" | "bombe_ramt" | "pol_ramt" | "maal"
+   ===================================================================== */
+let duelAktiv = false, D = null, mod = null, dyn = [], maalI = -1, zMaal = 0, modEfx = [];
+function nyEffekt() { return { stoedT: 0, turboT: 0, bremseT: 0, snurT: 0, skjoldT: 0, penT: 0, ting: null, tingT: 0, maalTid: null }; }
+const pl = nyEffekt();    // spillerens duel-tilstand (selve donutten ligger i de gamle variabler)
+
+const TING = {
+  turbo:  { navn: "Turbosukker",  farve: "#ffcf3f" },
+  bombe:  { navn: "Glasurbombe",  farve: "#ff5fa8" },
+  pol:    { navn: "Karamelpøl",   farve: "#d9902f" },
+  skjold: { navn: "Sukkerskjold", farve: "#6fd0ff" }
+};
+
+// Fartfaktor ud fra stød, turbo, pøl, snurren og tidsstraf. Bruges af både spiller og AI.
+function effektFart(r) {
+  if (r.penT > 0 || r.snurT > 0) return 0;
+  let m = 1;
+  if (r.stoedT > 0) m *= DUEL_STOED_FART;
+  if (r.turboT > 0) m *= TURBO_FART;
+  if (r.bremseT > 0) m *= POL_BREMSE;
+  return m;
+}
+// Gummibånd: den der er mere end 15 m bagud får op til GUMMIBAAND ekstra fart (fuld effekt ved 75 m)
+function gummi(minZ, andenZ) {
+  const bag = andenZ - minZ;
+  if (GUMMIBAAND <= 0 || bag <= 15) return 1;
+  return 1 + GUMMIBAAND * klem((bag - 15) / 60, 0, 1);
+}
+function tikEffekt(r, dt) {
+  r.stoedT = Math.max(0, r.stoedT - dt); r.turboT = Math.max(0, r.turboT - dt); r.bremseT = Math.max(0, r.bremseT - dt);
+  r.snurT = Math.max(0, r.snurT - dt); r.skjoldT = Math.max(0, r.skjoldT - dt); r.penT = Math.max(0, r.penT - dt);
+  r.tingT += dt;
+}
+// Tilfældig ting. forspring > 0 = jeg er foran. Den bagud får bedre ting (turbo og bombe), den foran får forsvar (pøl og skjold)
+function vaelgTing(forspring) {
+  const bag = klem(-forspring / 60, 0, 1) * GAVE_HJAELP, for_ = klem(forspring / 60, 0, 1) * GAVE_HJAELP;
+  const v = { turbo: 1 + 2 * bag, bombe: Math.max(0.25, 1 + 3 * bag - 0.7 * for_), pol: Math.max(0.3, 1 + 2 * for_ - 0.6 * bag), skjold: 1 + 1.5 * for_ };
+  let sum = 0; for (const k in v) sum += v[k];
+  let r = Math.random() * sum;
+  for (const k in v) { r -= v[k]; if (r <= 0) return k; }
+  return "turbo";
+}
+
+/* ---------- AI-modstanderen ---------- */
+const AIP = {};
+AIP.hopHNu = function () {
+  if (this.hopTid <= 0) return 0;
+  const u = 1 - this.hopTid / this.hopVarighed;
+  return this.hopMax * Math.sin(Math.PI * u) + this.hopStartH * (1 - u);
+};
+AIP.taget = function (t) { return this.brugt.has(t.id); };
+AIP.tilfoej = function (type, data, t) { const ev = { type: type, seq: ++this.seq, t: t }; for (const k in data) ev[k] = data[k]; this.ud.push(ev); };
+AIP.snap = function () {
+  return { z: this.z, x: this.x, fart: this.fart, hopTid: this.hopTid, hopH: this.hopHNu(), skjold: this.skjoldT > 0, ting: this.ting, snur: this.snurT > 0,
+    blink: this.blink, skjoldT: this.skjoldT, pen: this.penT > 0, turbo: this.turboT > 0, bremse: this.bremseT > 0, lean: this.lean, rot: this.rot, landSq: this.landSq, maalTid: this.maalTid };
+};
+AIP.send = function (ev) {
+  if (ev.type === "bombe_ramt" && ev.mal === "m") {
+    if (this.skjoldT > 0) { this.skjoldT = 0; this.blink = Math.max(this.blink, 0.6); }
+    else { this.snurT = BOMBE_SNURRE; this.blink = Math.max(this.blink, BOMBE_SNURRE + 0.4); }
+  } else if (ev.type === "pol_ramt" && ev.mal === "m") this.bremseT = POL_BREMSE_TID;
+};
+AIP.hent = function () { const u = this.ud; this.ud = []; return u; };
+
+// Beslutning: hvilket spor, hop-planer og om tingen skal bruges. Kører hvert "reaktion" sekund.
+AIP.beslut = function (ctx) {
+  const S = this.S, fart = Math.max(9, this.fart), L = klem(fart * 1.8, 25, 40), syn = Math.max(8, L - S.reaktion * fart * 0.6);
+  const i0 = Math.floor(this.z / SEG), i1 = Math.floor((this.z + L) / SEG);
+  const slik = [], lak = [], goder = [];
+  let wmin = 9, naer = 999;
+  for (let i = i0; i <= i1; i++) {
+    const sg = seg(i); if (!sg) break;
+    wmin = Math.min(wmin, BANE_HALV * sg.w);
+    if (sg.flod && !(seg(i - 1) && seg(i - 1).flod) && sg.i * SEG > this.z - 0.5 && sg.i * SEG - this.z < syn) {
+      const key = "f" + sg.i, sv = this.sete[key] || (this.sete[key] = this.nySyn());
+      naer = Math.min(naer, sg.i * SEG - this.z);
+      if (!sv.miss && !sv.planlagt) { sv.planlagt = true; this.hopPlan.push({ pos0: sg.i * SEG, flod: true, sv: sv }); }
+    }
+    for (let j = 0; j < sg.ting.length; j++) {
+      const t = sg.ting[j], d = t.pos - this.z;
+      if (d < -0.5 || d > L) continue;
+      if (t.tp === "slik" && d <= syn) { const sv = this.sete[t.id] || (this.sete[t.id] = this.nySyn()); if (!sv.miss) slik.push(t); naer = Math.min(naer, d); }
+      else if (t.tp === "lakrids" && d <= syn) {
+        const sv = this.sete[t.id] || (this.sete[t.id] = this.nySyn()); naer = Math.min(naer, d);
+        if (!sv.miss) { lak.push(t); if (!sv.planlagt) { sv.planlagt = true; this.hopPlan.push({ pos0: t.pos, x1: t.x1, x2: t.x2, flod: false, sv: sv }); } }
+      }
+      else if ((t.tp === "donut" || t.tp === "gave") && !this.taget(t)) goder.push(t);
+    }
+  }
+  // vælg bedste spor
+  const maxX = Math.max(0.5, wmin - 0.9), vilGave = !this.ting;
+  let bedst = this.tx, bedstC = 1e9;
+  for (let lane = -maxX; lane <= maxX + 0.01; lane += 0.4) {
+    let c = Math.abs(lane - this.x) * 0.4 + Math.abs(lane - this.tx) * 0.15;
+    for (let k = 0; k < slik.length; k++) { const t = slik[k]; if (Math.abs(t.x - lane) < 1.3) c += 60 - (t.pos - this.z) * 0.6; }
+    for (let k = 0; k < lak.length; k++) { const t = lak[k]; if (lane > t.x1 - 0.7 && lane < t.x2 + 0.7) c += 3; }
+    for (let k = 0; k < goder.length; k++) {
+      const t = goder[k];
+      if (Math.abs(t.x - lane) < 1.0) {
+        if (t.tp === "gave") c -= vilGave ? 3.2 : 0; else if (t.h < 1.3) c -= 1.2;
+      }
+    }
+    if (c < bedstC) { bedstC = c; bedst = lane; }
+  }
+  if (Math.random() >= S.fejl * 0.4) this.tx = bedst;
+  // ting
+  this.brugNu = false;
+  if (this.ting && this.tingT > this.tingVent) {
+    const t = this.ting, g = ctx.pz - this.z, venter = this.tingT - this.tingVent;
+    let bruge = false;
+    if (t === "turbo") bruge = naer > 16 || g > 25;
+    else if (t === "bombe") bruge = g > 3 && g < BOMBE_RAEKKEVIDDE - 14 && Math.abs(ctx.px - this.x) < 5;
+    else if (t === "pol") bruge = g < -3 && g > -35;
+    else if (t === "skjold") bruge = ctx.dyn.some(function (b) { return b.tp === "bombe" && b.owner === "p" && b.z < ctx.az && ctx.az - b.z < 34; });
+    if (!bruge && Math.random() < (1 - S.ting) * 0.12) bruge = true;        // svage AI'er bruger tingen lidt tilfældigt
+    if (bruge && Math.random() < 0.35 + 0.65 * S.ting) this.brugNu = true;
+    if (venter > 14) this.brugNu = true;                                        // brug den hellere end at gemme den for evigt
+  }
+};
+AIP.nySyn = function () { const S = this.S; return { miss: Math.random() < S.fejl, err: (Math.random() * 2 - 1) * S.hopFejl, late: Math.random() < S.fejl * 0.6, planlagt: false }; };
+
+// Styring: returnerer hvad en spiller ville trykke på lige nu
+AIP.styr = function (dt, ctx) {
+  const out = { dir: 0, hop: false, brug: false };
+  ctx.az = this.z;
+  this.tB -= dt;
+  if (this.tB <= 0) { this.tB = this.S.reaktion * (0.75 + Math.random() * 0.5); this.beslut(ctx); }
+  const dx = this.tx - this.x;
+  out.dir = Math.abs(dx) < 0.18 ? 0 : (dx > 0 ? 1 : -1);
+  if (this.hopTid <= 0 && this.hopPlan.length) {
+    const fart = Math.max(5, this.fart), T = this.hopTidN || HOP_TID;
+    for (let i = this.hopPlan.length - 1; i >= 0; i--) {
+      const p = this.hopPlan[i], d = p.pos0 - this.z;
+      if (d < -0.4) { this.hopPlan.splice(i, 1); continue; }
+      if (!p.flod && !(this.x > p.x1 - 0.9 && this.x < p.x2 + 0.9)) continue;
+      let thr = p.flod ? (fart * T - 2.2) / 2 : fart * T * 0.5 - 0.3;
+      thr = Math.max(0.3, thr + p.sv.err);
+      if (p.sv.late) thr -= 3.2;
+      if (d <= thr) { out.hop = true; this.hopPlan.splice(i, 1); break; }
+    }
+  }
+  if (this.brugNu && this.ting) { out.brug = true; this.brugNu = false; }
+  return out;
+};
+
+AIP.stoed = function (ctx) { this.stoedT = DUEL_STOED_TID; this.blink = DUEL_STOED_TID; this.tilfoej("stoed", {}, ctx.t); modEfx.push({ k: "krummer" }); };
+
+AIP.fysik = function (dt, out, ctx) {
+  const foer = this.z, sP = seg(Math.floor(this.z / SEG)), d = this.donut;
+  tikEffekt(this, dt);
+  const maalMul = sP && sP.boost ? FARTFELT_FART : (sP && sP.sticky ? KLISTRET_FART : 1);
+  this.speedMul += (maalMul - this.speedMul) * klem(dt * (maalMul > this.speedMul ? 9 : 4), 0, 1);
+  const fart = fartVed(this.z - START_Z) * (d.evne === "langsom" ? 0.9 : 1) * this.speedMul * effektFart(this) * this.S.fart * gummi(this.z, ctx.pz);
+  this.fart = fart; this.z += fart * dt;
+  this.rot += fart * dt * 0.34 + (this.snurT > 0 ? 20 * dt : 0);
+  const maal = out.dir * STYRE_FART * (d.evne === "styring" ? 1.3 : 1);
+  this.vx += (maal - this.vx) * Math.min(1, dt * 14); this.x += this.vx * dt;
+  const kant = (sP ? BANE_HALV * sP.w : BANE_HALV) - SPILLER_R;
+  if (this.x < -kant) { this.x = -kant; this.vx = 0; }
+  if (this.x > kant) { this.x = kant; this.vx = 0; }
+  this.lean += ((klem(this.vx / STYRE_FART, -1, 1)) * 0.22 - (sP ? sP.curve * 6 : 0) - this.lean) * klem(dt * 10, 0, 1);
+  if (this.landSq > 0) this.landSq = Math.max(0, this.landSq - dt * 5);
+  if (out.hop && this.hopTid <= 0 && this.penT <= 0 && this.snurT <= 0) { this.hopVarighed = this.hopTidN; this.hopMax = this.hopHoejdeN; this.hopStartH = 0; this.hopTid = this.hopVarighed; }
+  if (this.hopTid > 0) { this.hopTid -= dt; if (this.hopTid <= 0) { this.hopTid = 0; this.landSq = 1; this.hopStartH = 0; } }
+  if (this.hopTid <= 0) {
+    for (let i = Math.floor(foer / SEG); i <= Math.floor(this.z / SEG); i++) {
+      const s = seg(i);
+      if (s && s.lip && (s.i + 1) * SEG > foer && (s.i + 1) * SEG <= this.z) {
+        this.hopVarighed = RAMPE_HOP_TID * (d.evne === "superhop" ? 1.2 : 1); this.hopMax = RAMPE_HOEJDE; this.hopStartH = RAMPE_H; this.hopTid = this.hopVarighed;
+      }
+    }
+  }
+  if (this.blink > 0) this.blink = Math.max(0, this.blink - dt);
+  const iL = this.hopTid > 0, hh = this.hopHNu();
+  const i0 = Math.floor(foer / SEG) - 3, i1 = Math.floor(this.z / SEG) + 3;
+  for (let i = i0; i <= i1; i++) {
+    const s = seg(i); if (!s) continue;
+    if (s.flod && !iL && this.penT <= 0 && s.i * SEG <= this.z && (s.i + 1) * SEG >= foer) {
+      let j = s.i; while (seg(j - 1) && seg(j - 1).flod) j--;
+      this.z = j * SEG - 7; this.x = 0; this.vx = 0; this.tx = 0; this.hopTid = 0; this.hopPlan = []; this.sete = {};
+      this.penT = DUEL_FLOD_STRAF; this.blink = this.penT + 1.0; this.stoedT = 0;
+      this.tilfoej("flod", {}, ctx.t); modEfx.push({ k: "plask" });
+      break;
+    }
+    for (let j = 0; j < s.ting.length; j++) {
+      const t = s.ting[j];
+      if (t.tp === "donut") {
+        if (!this.taget(t) && Math.abs(t.x - this.x) < 1.15 && Math.abs(t.h - hh) < 1.5 && t.pos - 0.8 <= this.z && t.pos + 0.8 >= foer) { this.brugt.add(t.id); this.samlet++; }
+      } else if (t.tp === "gave") {
+        if (!this.taget(t) && Math.abs(t.x - this.x) < 1.1 && Math.abs(hh) < 1.5 && t.pos - 0.8 <= this.z && t.pos + 0.8 >= foer) {
+          this.brugt.add(t.id);
+          if (!this.ting) {
+            this.ting = vaelgTing(this.z - ctx.pz); this.tingT = 0; this.tingVent = (0.6 + Math.random() * 2.2) * (1.7 - this.S.ting);
+            this.tilfoej("gave", { id: t.id, ting: this.ting }, ctx.t); modEfx.push({ k: "gave" });
+          }
+        }
+      } else if (t.tp === "slik") {
+        if (!this.rammet.has(t.id) && this.blink <= 0 && Math.abs(t.x - this.x) < 0.55 + RAMME_R && t.pos - 0.6 <= this.z && t.pos + 0.6 >= foer) { this.rammet.add(t.id); this.stoed(ctx); }
+      } else if (t.tp === "lakrids") {
+        if (!this.rammet.has(t.id) && this.blink <= 0 && !iL && this.x + RAMME_R > t.x1 && this.x - RAMME_R < t.x2 && t.pos - 0.5 <= this.z && t.pos + 0.5 >= foer) { this.rammet.add(t.id); this.stoed(ctx); }
+      }
+    }
+  }
+};
+AIP.brug = function (ctx) {
+  const t = this.ting; if (!t) return;
+  this.ting = null; this.brugNu = false;
+  if (t === "turbo") this.turboT = TURBO_TID; else if (t === "skjold") this.skjoldT = SKJOLD_TID;
+  this.tilfoej("ting", { ting: t, z: t === "pol" ? this.z - 2.5 : this.z + 2, x: this.x, fart: this.fart }, ctx.t);
+};
+AIP.opdater = function (dt, ctx) {
+  if (!ctx.koerer) return;
+  const out = this.styr(dt, ctx);
+  this.fysik(dt, out, ctx);
+  if (out.brug) this.brug(ctx);
+  if (this.maalTid === null && this.z >= zMaal) { this.maalTid = ctx.t - (this.z - zMaal) / Math.max(1, this.fart); this.tilfoej("maal", { tid: this.maalTid }, ctx.t); }
+};
+
+function lavAI(svKey, d, navn) {
+  const lang = d.evne === "superhop" ? 1.7 : (d.evne === "hop" ? 1.25 : 1);
+  const a = Object.create(AIP);
+  Object.assign(a, nyEffekt(), {
+    navn: navn, donut: d, sv: svKey, S: AI_SV[svKey], z: START_Z, x: 1.2, vx: 0, tx: 1.2, fart: START_FART, speedMul: 1, rot: 0, lean: 0, landSq: 0,
+    hopTid: 0, hopStartH: 0, hopTidN: HOP_TID * lang, hopHoejdeN: HOP_HOEJDE * Math.pow(lang, 0.8), blink: 0, samlet: 0, bidder: d.bidder,
+    brugt: new Set(), rammet: new Set(), sete: {}, hopPlan: [], tB: 0.2, seq: 0, ud: [], tingVent: 0, brugNu: false
+  });
+  a.hopVarighed = a.hopTidN; a.hopMax = a.hopHoejdeN;
+  return a;
+}
+
+/* =====================================================================
+   DUEL: spillerens regler, ting, bomber, pøle, målstreg, runder og skærme
+   ===================================================================== */
+const DUEL_START_X = 1.2;      // start-afstand fra midten for spiller (venstre) og modstander (højre)
+let simAcc = 0;
+
+function fmtTid(t) { return t.toFixed(1).replace(".", ",") + " s"; }
+
+/* ---------- Hændelser ---------- */
+function haendelse(type, data) {
+  const ev = { type: type, seq: ++D.seq, t: D.t };
+  for (const k in data) ev[k] = data[k];
+  D.log.push(ev); if (D.log.length > 300) D.log.shift();
+  mod.send(ev);
+  return ev;
+}
+
+/* ---------- Spillerens effekter ---------- */
+function duelStoed() {
+  pl.stoedT = DUEL_STOED_TID; blink = DUEL_STOED_TID; shake = 0.6;
+  lavKrummer(12, ["#d79a55", STIL[donut.id].g1, "#f1c98f"], 240);
+  tekster.push({ x: spilSkala.x, y: spilSkala.y - spilSkala.r * 2.4, txt: "Av!", liv: 0.9, farve: "#ffd0e6" });
+}
+function duelFlod(s) {
+  let j = s.i; while (seg(j - 1) && seg(j - 1).flod) j--;
+  zp = j * SEG - 7; playerX = 0; spillerVX = 0; hopTid = 0; hopStartH = 0;
+  pl.penT = DUEL_FLOD_STRAF; blink = pl.penT + 1.0; pl.stoedT = 0;
+  shake = 0.7;
+  spawn(spilSkala.x, spilSkala.y, 36, ["#6b3a1e", "#8a5230", "#4e2812"], 360, { op: 1.1, str: 5, liv: 0.9 });
+  tekster.push({ x: spilSkala.x, y: spilSkala.y - spilSkala.r * 2.6, txt: "Plask! +" + DUEL_FLOD_STRAF + " s", liv: 1.2, farve: "#ffb27a" });
+  haendelse("flod", { z: zp });
+}
+function duelGave(t) {
+  spawn(spilSkala.x, spilSkala.y - spilSkala.r, 14, ["#ffffff", "#ffe14d", "#ff8fc7", "#6fd0ff"], 260, { form: 2, str: 3.5, g: 300, liv: 0.6 });
+  if (pl.ting) return;
+  pl.ting = vaelgTing(zp - mod.z); pl.tingT = 0;
+  tekster.push({ x: spilSkala.x, y: spilSkala.y - spilSkala.r * 2.5, txt: TING[pl.ting].navn, liv: 1.1, farve: TING[pl.ting].farve });
+  haendelse("gave", { id: t.id, ting: pl.ting });
+}
+function brugTingPl() {
+  if (!duelAktiv || !D || D.fase !== "loeb" || tilstand !== "koerer" || !pl.ting || pl.penT > 0) return;
+  const t = pl.ting; pl.ting = null;
+  const tx = spilSkala.x, ty = spilSkala.y - spilSkala.r * 2.6;
+  if (t === "turbo") { pl.turboT = TURBO_TID; shake = 0.3; }
+  else if (t === "skjold") pl.skjoldT = SKJOLD_TID;
+  else if (t === "bombe") dyn.push({ tp: "bombe", owner: "p", z: zp + 2, z0: zp + 2, x: playerX, vz: fartNu + 26, age: 0 });
+  else if (t === "pol") dyn.push({ tp: "pol", owner: "p", z: zp - 2.5, x: playerX, ttl: POL_TID, age: 0 });
+  tekster.push({ x: tx, y: ty, txt: TING[t].navn + "!", liv: 1.1, farve: TING[t].farve });
+  spawn(spilSkala.x, spilSkala.y - spilSkala.r * 0.6, 18, [TING[t].farve, "#ffffff"], 280, { form: 2, str: 3.5, g: 200, liv: 0.6 });
+  haendelse("ting", { ting: t, z: t === "pol" ? zp - 2.5 : zp + 2, x: playerX, fart: fartNu });
+}
+
+/* ---------- Duellens tikker (kører i fast tempo) ---------- */
+function modHaendelse(ev) {
+  D.log.push(ev);
+  if (ev.type === "ting") {
+    if (ev.ting === "bombe") dyn.push({ tp: "bombe", owner: "m", z: ev.z, z0: ev.z, x: ev.x, vz: (ev.fart || 12) + 26, age: 0 });
+    else if (ev.ting === "pol") dyn.push({ tp: "pol", owner: "m", z: ev.z, x: ev.x, ttl: POL_TID, age: 0 });
+    modEfx.push({ k: "tekst", txt: TING[ev.ting].navn + "!", farve: TING[ev.ting].farve });
+    if (ev.ting === "turbo") modEfx.push({ k: "turbo" });
+  } else if (ev.type === "maal") D.modMaal = ev.tid;
+}
+function duelTik(dt) {
+  if (!D || D.fase !== "loeb") return;
+  D.t += dt;
+  tikEffekt(pl, dt);
+  if (pl.snurT > 0) rot += 20 * dt;
+  const ctx = { koerer: true, t: D.t, pz: zp, px: playerX, pFart: fartNu, dyn: dyn, zMaal: zMaal };
+  mod.opdater(dt, ctx);
+  const ind = mod.hent();
+  for (let i = 0; i < ind.length; i++) modHaendelse(ind[i]);
+  opdaterDyn(dt);
+  // effekter på spilleren
+  if (pl.turboT > 0 && Math.random() < 0.6) spawn(spilSkala.x, spilSkala.y, 2, ["#ffe14d", "#ff9f1c", "#ffffff"], 200, { op: 0.3, form: 2, str: 3, g: 100, bag: true });
+  // mål
+  if (pl.maalTid === null && zp >= zMaal) {
+    pl.maalTid = D.t - (zp - zMaal) / Math.max(1, fartNu);
+    haendelse("maal", { tid: pl.maalTid });
+  }
+  if (D.foerste === null && (pl.maalTid !== null || D.modMaal !== null)) {
+    D.foerste = (pl.maalTid !== null && (D.modMaal === null || pl.maalTid <= D.modMaal)) ? "p" : "m";
+    D.efterT = 0;
+    if (D.foerste === "p") { shake = 0.4; spawn(W / 2, H * 0.3, 40, ["#ffe14d", "#ff3f8a", "#ffffff", "#6fd0ff"], 420, { form: 2, str: 4, g: 400, liv: 1.2 }); }
+  }
+  if (D.foerste !== null) {
+    D.efterT += dt;
+    if (D.efterT >= 2.2 || (pl.maalTid !== null && D.modMaal !== null)) duelRundeSlut();
+  }
+}
+function opdaterDyn(dt) {
+  const mp = mod.snap(D.t);
+  for (let i = dyn.length - 1; i >= 0; i--) {
+    const b = dyn[i]; b.age += dt;
+    if (b.tp === "bombe") {
+      const mal = b.owner === "p" ? { z: mp.z, x: mp.x } : { z: zp, x: playerX };
+      b.z += b.vz * dt;
+      if (mal.z > b.z - 0.5) b.x += klem(mal.x - b.x, -14 * dt, 14 * dt);
+      if (b.z - b.z0 > BOMBE_RAEKKEVIDDE || b.age > 4) { dyn.splice(i, 1); continue; }
+      if (Math.abs(mal.z - b.z) < 1.8 && Math.abs(mal.x - b.x) < 1.7) {
+        dyn.splice(i, 1);
+        if (b.owner === "p") {
+          const blok = mp.skjold;
+          haendelse("bombe_ramt", { mal: "m", blokeret: blok });
+          modEfx.push({ k: blok ? "blok" : "splat" });
+        } else {
+          const blok = pl.skjoldT > 0;
+          if (blok) { pl.skjoldT = 0; blink = Math.max(blink, 0.6); } else { pl.snurT = BOMBE_SNURRE; blink = Math.max(blink, BOMBE_SNURRE + 0.4); shake = 0.8; }
+          spawn(spilSkala.x, spilSkala.y - spilSkala.r, blok ? 24 : 34, blok ? ["#6fd0ff", "#ffffff"] : ["#ff5fa8", "#ffffff", "#ffc2e0"], 380, { op: 0.9, str: 5, liv: 0.9 });
+          tekster.push({ x: spilSkala.x, y: spilSkala.y - spilSkala.r * 2.6, txt: blok ? "Blokeret!" : "Splat!", liv: 1.1, farve: blok ? "#9fe0ff" : "#ff9ccb" });
+          haendelse("bombe_ramt", { mal: "p", blokeret: blok });
+        }
+      }
+    } else if (b.tp === "pol") {
+      b.ttl -= dt;
+      if (b.ttl <= 0) { dyn.splice(i, 1); continue; }
+      // spilleren
+      if (pl.bremseT <= 0.3 && hopH() < 0.35 && !(b.owner === "p" && b.age < 1.2) && Math.abs(zp - b.z) < 1.3 && Math.abs(playerX - b.x) < 1.5) {
+        pl.bremseT = POL_BREMSE_TID;
+        spawn(spilSkala.x, spilSkala.y, 16, ["#d9902f", "#ffd27a", "#b06a14"], 260, { op: 0.8, str: 4, liv: 0.7 });
+        tekster.push({ x: spilSkala.x, y: spilSkala.y - spilSkala.r * 2.4, txt: "Klistret!", liv: 0.9, farve: "#ffcf7a" });
+        haendelse("pol_ramt", { mal: "p" });
+      }
+      // modstanderen
+      if (!mp.bremse && mp.hopH < 0.35 && !(b.owner === "m" && b.age < 1.2) && Math.abs(mp.z - b.z) < 1.3 && Math.abs(mp.x - b.x) < 1.5) {
+        haendelse("pol_ramt", { mal: "m" });
+        modEfx.push({ k: "pol" });
+      }
+    }
+  }
+}
+
+/* ---------- Runder og skærme ---------- */
+function duelNy() {
+  const sv = gemt.duel.sv;
+  let aiId = gemt.duel.ai;
+  if (aiId === "tilfaeldig") aiId = DONUTS[Math.floor(Math.random() * DONUTS.length)].id;
+  D = { sv: sv, aiDonut: findDonut(aiId), aiNavn: AI_NAVNE[Math.floor(Math.random() * AI_NAVNE.length)], runde: 0, score: [0, 0], runder: [],
+    seed: Math.floor(Math.random() * 1e9), betalt: false, slut: false, beloenning: 0, serieVinder: null, fase: "", t: 0, seq: 0, log: [], foerste: null, efterT: 0, modMaal: null };
+}
+function duelRunde() {
+  D.runde++; D.t = 0; D.fase = "nedtael"; D.foerste = null; D.efterT = 0; D.modMaal = null; D.log = []; D.seq = 0;
+  duelAktiv = true;
+  nulstilScene(false, (D.seed + D.runde * 7919) >>> 0);
+  Object.assign(pl, nyEffekt()); dyn = []; modEfx = [];
+  zMaal = START_Z + DUEL_LAENGDE; maalI = Math.floor(zMaal / SEG);
+  playerX = -DUEL_START_X;
+  mod = lavAI(D.sv, D.aiDonut, D.aiNavn);
+  nedTid = 0; tilstand = "nedtaelling";
+  visSkaerm(null);
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+}
+function duelRundeSlut() {
+  const ms = mod.snap(D.t);
+  const estP = pl.maalTid === null, estM = ms.maalTid === null;
+  const tP = estP ? D.t + (zMaal - zp) / Math.max(5, fartNu) : pl.maalTid;
+  const tM = estM ? D.t + (zMaal - ms.z) / Math.max(5, ms.fart) : ms.maalTid;
+  D.runder.push({ tP: tP, tM: tM, estP: estP, estM: estM, vinder: D.foerste });
+  D.score[D.foerste === "p" ? 0 : 1]++;
+  const behov = Math.ceil(DUEL_RUNDER / 2);
+  D.slut = D.score[0] >= behov || D.score[1] >= behov || D.runde >= DUEL_RUNDER;
+  if (D.slut) {
+    D.serieVinder = D.score[0] > D.score[1] ? "p" : (D.score[1] > D.score[0] ? "m" : null);
+    D.beloenning = D.serieVinder === "p" ? DUEL_BELOENNING_SEJR : DUEL_BELOENNING_TAB;
+    if (!D.betalt) { D.betalt = true; gemt.donuts += D.beloenning; gemNu(); }
+  }
+  D.fase = "skaerm"; tilstand = "duelSkaerm";
+  visDuelRunde();
+}
+function visDuelRunde() {
+  const r = D.runder[D.runder.length - 1], n = D.aiNavn;
+  const ca = function (est) { return est ? " (ca.)" : ""; };
+  el("dBeloenning").style.display = "none";
+  el("dKnap2").style.display = D.slut ? "inline-block" : "none";
+  if (!D.slut) {
+    el("dTitel").textContent = "Runde " + D.runde + ": " + (r.vinder === "p" ? "Du vandt!" : n + " vandt");
+    el("dKnap1").textContent = "Næste runde";
+  } else {
+    el("dTitel").textContent = D.serieVinder === "p" ? "Du vandt duellen!" : (D.serieVinder === "m" ? n + " vandt duellen" : "Uafgjort!");
+    el("dKnap1").textContent = "Revanche";
+    el("dBeloenning").style.display = "block";
+    el("dBeloenning").textContent = "+" + D.beloenning + " donuts";
+  }
+  el("dLinje1").textContent = "Din tid: " + fmtTid(r.tP) + ca(r.estP);
+  el("dLinje2").textContent = n + ": " + fmtTid(r.tM) + ca(r.estM);
+  el("dLinje3").textContent = "Stilling: Dig " + D.score[0] + " – " + D.score[1] + " " + n + (D.slut ? "  ·  Du har nu " + tal(gemt.donuts) + " donuts" : "");
+  visSkaerm("duelrunde");
+  el("duelrunde").className += D.slut ? " stor" : "";
+}
+function visDuelMenu() {
+  duelAktiv = false;
+  nulstilScene(true);
+  tilstand = "duelmenu";
+  const sel = el("aiDonutValg");
+  if (!sel.options.length) {
+    const o0 = document.createElement("option"); o0.value = "tilfaeldig"; o0.textContent = "Tilfældig"; sel.appendChild(o0);
+    DONUTS.forEach(function (d) { const o = document.createElement("option"); o.value = d.id; o.textContent = d.navn; sel.appendChild(o); });
+  }
+  sel.value = gemt.duel.ai;
+  el("duelLen").textContent = tal(DUEL_LAENGDE); el("duelRun").textContent = DUEL_RUNDER;
+  markerSv();
+  visSkaerm("duelmenu");
+}
+function markerSv() {
+  const bs = el("svValg").querySelectorAll("button");
+  for (let i = 0; i < bs.length; i++) bs[i].className = bs[i].getAttribute("data-sv") === gemt.duel.sv ? "valgt" : "";
+}
+function duelTilMenu() { duelAktiv = false; D = null; mod = null; dyn = []; tilMenu(); }
+
+(function () {
+  const bs = el("svValg").querySelectorAll("button");
+  for (let i = 0; i < bs.length; i++) bs[i].addEventListener("click", function () { gemt.duel.sv = this.getAttribute("data-sv"); gemNu(); markerSv(); });
+  el("aiDonutValg").addEventListener("change", function () { gemt.duel.ai = this.value; gemNu(); });
+  el("knapDuel").addEventListener("click", visDuelMenu);
+  el("knapDuelStart").addEventListener("click", function () { duelNy(); duelRunde(); });
+  el("knapDuelTilbage").addEventListener("click", duelTilMenu);
+  el("dKnap1").addEventListener("click", function () { if (D.slut) { duelNy(); } duelRunde(); });
+  el("dKnap2").addEventListener("click", duelTilMenu);
+  const tk = el("knapTing");
+  tk.addEventListener("pointerdown", function (e) { e.preventDefault(); e.stopPropagation(); brugTingPl(); });
+  tk.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+})();
+let tingKnapTxt = null;
+function opdaterTingKnap() {
+  const tk = el("knapTing"), vis = duelAktiv && (tilstand === "koerer" || tilstand === "nedtaelling");
+  const txt = vis ? (pl.ting ? TING[pl.ting].navn : "Ingen ting") : "";
+  const kl = "" + (vis ? "vis" : "") + (vis && !pl.ting ? " tom" : "");
+  if (tingKnapTxt !== txt + "|" + kl) { tingKnapTxt = txt + "|" + kl; tk.textContent = txt; tk.className = kl; }
+}
+
+/* =====================================================================
+   DUEL: tegning (gaveæsker, ting, modstander, målstreg, HUD)
+   ===================================================================== */
+let duelMs = null;
+const modSkala = { x: 0, y: 0, r: 40, vis: false };
+const GAVE_FARVER = ["#ff5fa8", "#4db8ff", "#ffcf3f"];
+
+function duelFrameStart() {
+  duelMs = (duelAktiv && mod) ? mod.snap(D.t) : null;
+  modSkala.vis = false;
+}
+function duelHarSeg(i) {
+  if (duelMs && Math.floor(duelMs.z / SEG) === i) return true;
+  for (let k = 0; k < dyn.length; k++) if (Math.floor(dyn[k].z / SEG) === i) return true;
+  return false;
+}
+
+function tegnTingIkon(typ, x, y, r) {
+  c.save(); c.translate(x, y); c.lineJoin = "round"; c.lineCap = "round";
+  if (typ === "turbo") {
+    c.beginPath(); c.moveTo(r * 0.15, -r); c.lineTo(-r * 0.6, r * 0.1); c.lineTo(-r * 0.05, r * 0.1); c.lineTo(-r * 0.2, r); c.lineTo(r * 0.65, -r * 0.2); c.lineTo(r * 0.1, -r * 0.2); c.closePath();
+    c.fillStyle = "#ffd23f"; c.fill(); c.lineWidth = r * 0.14; c.strokeStyle = "#e07a00"; c.stroke();
+  } else if (typ === "bombe") {
+    const g = c.createRadialGradient(-r * 0.3, -r * 0.2, r * 0.1, 0, 0, r * 0.8); g.addColorStop(0, "#ffc2e0"); g.addColorStop(1, "#e82a78");
+    c.fillStyle = g; c.beginPath(); c.arc(0, r * 0.15, r * 0.72, 0, 6.2832); c.fill(); c.lineWidth = r * 0.1; c.strokeStyle = "#a8195a"; c.stroke();
+    c.strokeStyle = "#6a3a1e"; c.lineWidth = r * 0.1; c.beginPath(); c.moveTo(r * 0.2, -r * 0.5); c.quadraticCurveTo(r * 0.5, -r * 0.9, r * 0.7, -r * 0.7); c.stroke();
+    c.fillStyle = "#ffe14d"; c.beginPath(); c.arc(r * 0.72, -r * 0.74, r * 0.16, 0, 6.2832); c.fill();
+    c.fillStyle = "rgba(255,255,255,.8)"; c.beginPath(); c.ellipse(-r * 0.28, -r * 0.15, r * 0.18, r * 0.11, -0.6, 0, 6.2832); c.fill();
+  } else if (typ === "pol") {
+    c.fillStyle = "#b06a14"; c.beginPath(); c.ellipse(0, r * 0.25, r * 0.95, r * 0.5, 0, 0, 6.2832); c.fill();
+    c.fillStyle = "#e6a640"; c.beginPath(); c.ellipse(-r * 0.05, r * 0.15, r * 0.8, r * 0.38, 0, 0, 6.2832); c.fill();
+    c.fillStyle = "rgba(255,255,255,.7)"; c.beginPath(); c.ellipse(-r * 0.35, r * 0.05, r * 0.22, r * 0.09, -0.3, 0, 6.2832); c.fill();
+    c.fillStyle = "#e6a640"; c.beginPath(); c.arc(r * 0.3, -r * 0.3, r * 0.14, 0, 6.2832); c.fill();
+  } else if (typ === "skjold") {
+    const g = c.createRadialGradient(-r * 0.25, -r * 0.3, r * 0.1, 0, 0, r * 0.9); g.addColorStop(0, "#ffffff"); g.addColorStop(0.5, "#a6e3ff"); g.addColorStop(1, "#3fa9ff");
+    c.fillStyle = g; c.beginPath(); c.moveTo(0, -r * 0.95); c.quadraticCurveTo(r * 0.9, -r * 0.7, r * 0.8, r * 0.1); c.quadraticCurveTo(r * 0.6, r * 0.7, 0, r * 0.98);
+    c.quadraticCurveTo(-r * 0.6, r * 0.7, -r * 0.8, r * 0.1); c.quadraticCurveTo(-r * 0.9, -r * 0.7, 0, -r * 0.95); c.fill(); c.lineWidth = r * 0.1; c.strokeStyle = "#1f7fd0"; c.stroke();
+    c.fillStyle = "#ffffff"; c.beginPath(); c.arc(0, -r * 0.05, r * 0.2, 0, 6.2832); c.fill();
+  }
+  c.restore();
+}
+
+function tegnSkjold(x, y, r, tilbage) {
+  if (tilbage < 1.6 && Math.floor(tid * 8) % 2) return;
+  const R = r * 1.5, g = c.createRadialGradient(x, y, R * 0.45, x, y, R);
+  g.addColorStop(0, "rgba(130,215,255,0.08)"); g.addColorStop(0.8, "rgba(130,215,255,0.28)"); g.addColorStop(1, "rgba(190,240,255,0.75)");
+  c.fillStyle = g; c.beginPath(); c.arc(x, y, R, 0, 6.2832); c.fill();
+  c.strokeStyle = "rgba(255,255,255,.85)"; c.lineWidth = Math.max(1.5, r * 0.06); c.beginPath(); c.arc(x, y, R * 0.97, 0, 6.2832); c.stroke();
+  c.lineWidth = Math.max(2, r * 0.1); c.beginPath(); c.arc(x, y, R * 0.8, Math.PI * 1.15, Math.PI * 1.4); c.stroke();
+}
+
+function tegnGave(s, t, tt) {
+  if (!place(s, tt, t.x, 2.2)) return;
+  const sc = PL.sc, bw = 0.85 * sc, bob = Math.sin(tid * 3 + t.fase * 2) * 0.08 * sc * KY, yb = PL.y - 0.3 * sc * KY + bob;
+  const farve = GAVE_FARVER[((t.fase % 3) + 3) % 3], x = PL.x;
+  c.fillStyle = "rgba(40,10,40,.22)"; c.beginPath(); c.ellipse(PL.x, PL.y, bw * 0.7, bw * 0.2, 0, 0, 6.2832); c.fill();
+  const g = c.createLinearGradient(0, yb - bw, 0, yb); g.addColorStop(0, lys(farve, 0.35)); g.addColorStop(1, moerk(farve, 0.18));
+  c.fillStyle = g; pille(x - bw / 2, yb - bw, bw, bw, bw * 0.14); c.fill();
+  c.lineWidth = Math.max(1, bw * 0.05); c.strokeStyle = "#ffffff"; c.stroke();
+  c.fillStyle = "#ffffff"; c.fillRect(x - bw * 0.09, yb - bw, bw * 0.18, bw); c.fillRect(x - bw / 2, yb - bw * 0.58, bw, bw * 0.16);
+  c.beginPath(); c.ellipse(x - bw * 0.2, yb - bw * 1.06, bw * 0.2, bw * 0.12, -0.5, 0, 6.2832); c.ellipse(x + bw * 0.2, yb - bw * 1.06, bw * 0.2, bw * 0.12, 0.5, 0, 6.2832); c.fill();
+  const a = Math.max(0, Math.sin(tid * 4 + t.fase * 1.7));
+  if (a > 0.1) {
+    const sx = x + bw * 0.55, sy = yb - bw * 0.9, q = bw * 0.14 * (0.5 + a);
+    c.fillStyle = "rgba(255,255,255," + a + ")"; c.beginPath(); c.moveTo(sx, sy - q * 2); c.lineTo(sx + q * 0.5, sy - q * 0.5); c.lineTo(sx + q * 2, sy); c.lineTo(sx + q * 0.5, sy + q * 0.5);
+    c.lineTo(sx, sy + q * 2); c.lineTo(sx - q * 0.5, sy + q * 0.5); c.lineTo(sx - q * 2, sy); c.lineTo(sx - q * 0.5, sy - q * 0.5); c.closePath(); c.fill();
+  }
+}
+
+function tegnDyn(s, d) {
+  const tt = d.z / SEG - s.i;
+  if (!place(s, tt, d.x, 1.5)) return;
+  const sc = PL.sc;
+  if (d.tp === "bombe") {
+    const r = 0.42 * sc, cy = PL.y - 0.75 * sc * KY;
+    c.fillStyle = "rgba(40,10,40,.25)"; c.beginPath(); c.ellipse(PL.x, PL.y, r * 0.9, r * 0.3, 0, 0, 6.2832); c.fill();
+    for (let i = 4; i >= 1; i--) { c.fillStyle = "rgba(255,150,205," + (0.5 - i * 0.1) + ")"; c.beginPath(); c.arc(PL.x, cy + i * r * 0.55, r * (1 - i * 0.14), 0, 6.2832); c.fill(); }
+    const g = c.createRadialGradient(PL.x - r * 0.3, cy - r * 0.3, r * 0.1, PL.x, cy, r); g.addColorStop(0, "#ffd6ea"); g.addColorStop(0.5, "#ff5fa8"); g.addColorStop(1, "#c4156a");
+    c.fillStyle = g; c.beginPath(); c.arc(PL.x, cy, r, 0, 6.2832); c.fill();
+    c.lineWidth = Math.max(1, r * 0.12); c.strokeStyle = "#ffffff"; c.stroke();
+    c.fillStyle = Math.floor(tid * 14) % 2 ? "#ffe14d" : "#ffffff"; c.beginPath(); c.arc(PL.x + r * 0.45, cy - r * 1.05, r * 0.22, 0, 6.2832); c.fill();
+  } else if (d.tp === "pol") {
+    if (d.ttl < 3 && Math.floor(tid * 8) % 2) return;
+    const rx = 1.45 * sc, ry = Math.max(rx * 0.22, 0.5 * sc * KY * 0.5);
+    c.fillStyle = "#9a5a10"; c.beginPath(); c.ellipse(PL.x, PL.y - ry * 0.1, rx, ry, 0, 0, 6.2832); c.fill();
+    c.fillStyle = "#e0a040"; c.beginPath(); c.ellipse(PL.x - rx * 0.04, PL.y - ry * 0.28, rx * 0.88, ry * 0.8, 0, 0, 6.2832); c.fill();
+    c.fillStyle = "rgba(255,240,200,.75)"; c.beginPath(); c.ellipse(PL.x - rx * 0.35, PL.y - ry * 0.5, rx * 0.22, ry * 0.2, -0.2, 0, 6.2832); c.fill();
+    const b = (tid * 0.8 + d.x) % 1; c.fillStyle = "#e0a040"; c.beginPath(); c.arc(PL.x + rx * 0.3, PL.y - ry * (0.9 + b), sc * 0.1 * (1 - b), 0, 6.2832); c.fill();
+  }
+}
+
+function tegnModstander(s, ms) {
+  const t = ms.z / SEG - s.i;
+  if (!place(s, t, ms.x, 1.5)) return;
+  const sc = PL.sc, px = PL.x, pyG = hy - (grundY(ms.z) - camY) * sc * KY;
+  const r = SPILLER_R * sc, hf = Math.min(1, ms.hopH / HOP_HOEJDE), yHop = ms.hopH * sc * KY;
+  modSkala.x = px; modSkala.y = pyG; modSkala.r = r; modSkala.vis = true;
+  const naer = (ms.z - camZ) < 4.5 ? 0.5 : 1;
+  c.globalAlpha = naer;
+  c.fillStyle = "rgba(40,10,40," + (0.3 - 0.14 * hf) + ")";
+  c.beginPath(); c.ellipse(px, pyG + r * 0.1, r * (1.0 - 0.2 * hf), r * 0.36 * Math.max(1, KY * 0.55), 0, 0, 6.2832); c.fill();
+  const blinker = ms.blink > 0 && Math.floor(ms.blink * 10) % 2 === 0;
+  c.globalAlpha = (blinker ? 0.3 : 0.86) * naer;
+  const sx = 1 + 0.2 * ms.landSq - 0.06 * hf, sy = 1 - 0.24 * ms.landSq + 0.1 * hf;
+  const cy = pyG - yHop - r * 0.5;
+  tegnDonut3D(c, px, cy, r, mod.donut, mod.bidder, ms.rot, { flat: 0.84, lean: ms.lean, sx: sx, sy: sy, tid: tid, tykkelse: r * 0.2 });
+  c.globalAlpha = naer;
+  if (ms.skjold) tegnSkjold(px, cy, r, ms.skjoldT);
+  // navn
+  const fs = Math.round(klem(r * 0.46, 11, 20));
+  c.font = "bold " + fs + "px " + FONT; c.textAlign = "center"; c.textBaseline = "middle";
+  const tw = c.measureText(mod.navn).width + fs * 1.2, ly = cy - r * 1.25;
+  c.globalAlpha = 0.9 * naer; c.fillStyle = "rgba(120,10,70,.78)"; pille(px - tw / 2, ly - fs * 0.85, tw, fs * 1.7, fs * 0.85); c.fill();
+  c.globalAlpha = naer; c.fillStyle = "#ffffff"; c.fillText(mod.navn, px, ly + 1);
+  c.globalAlpha = 1;
+  if (ms.turbo && Math.random() < 0.5) spawn(px, pyG, 2, ["#ffe14d", "#ff9f1c", "#ffffff"], 200, { op: 0.3, form: 2, str: 3, g: 100, bag: true });
+  if (ms.bremse && Math.random() < 0.3) spawn(px, pyG, 1, ["#d9902f", "#ffd27a"], 120, { op: 0.4, str: 3, g: 100, bag: true });
+}
+
+function tegnMaalBue(s) {
+  if (!place(s, 0, 0, 9)) return;
+  const half = BANE_HALV * s.w, sc = PL.sc, cy = PL.y;
+  place(s, 0, -(half + 1.1)); const lx = PL.x; place(s, 0, half + 1.1); const rx = PL.x;
+  const ph = 6.2 * sc * KY, pw = 0.9 * sc;
+  for (let sd = 0; sd < 2; sd++) {
+    const px = sd ? rx : lx;
+    for (let i = 0; i < 8; i++) { c.fillStyle = i % 2 ? "#ffffff" : "#222222"; c.fillRect(px - pw / 2, cy - ph * (i + 1) / 8, pw, ph / 8 + 1); }
+  }
+  const bh = 1.9 * sc * KY, y0 = cy - ph - bh * 0.4, bw = rx - lx + pw * 2, rut = Math.max(4, bh / 3);
+  for (let rr = 0; rr < 3; rr++) for (let k = 0; k * rut < bw; k++) { c.fillStyle = (k + rr) % 2 ? "#ffffff" : "#222222"; c.fillRect(lx - pw + k * rut, y0 + rr * bh / 3, Math.min(rut, bw - k * rut), bh / 3 + 1); }
+  c.strokeStyle = "#ff3f8a"; c.lineWidth = Math.max(2, sc * 0.14); c.strokeRect(lx - pw, y0, bw, bh);
+  c.font = "bold " + Math.max(8, Math.round(sc * 1.15 * Math.min(1, KY * 0.6 + 0.4))) + "px " + FONT; c.textAlign = "center"; c.textBaseline = "middle";
+  c.lineJoin = "round"; c.lineWidth = Math.max(2, sc * 0.2); c.strokeStyle = "#ffffff"; c.strokeText("MÅL", (lx + rx) / 2, y0 + bh / 2);
+  c.fillStyle = "#e82a78"; c.fillText("MÅL", (lx + rx) / 2, y0 + bh / 2); c.lineJoin = "miter";
+}
+
+function tegnDuelSeg(s) {
+  if (s.i === maalI) tegnMaalBue(s);
+  for (let k = 0; k < dyn.length; k++) if (Math.floor(dyn[k].z / SEG) === s.i) tegnDyn(s, dyn[k]);
+  if (duelMs && Math.floor(duelMs.z / SEG) === s.i) tegnModstander(s, duelMs);
+}
+
+// Efter verden: effekter fra modstanderen (de får skærmplads fra tegnModstander)
+function tegnDuelEfter() {
+  const q = modEfx; modEfx = [];
+  if (!modSkala.vis) return;
+  const x = modSkala.x, y = modSkala.y, r = modSkala.r;
+  for (let i = 0; i < q.length; i++) {
+    const e = q[i];
+    if (e.k === "tekst") tekster.push({ x: x, y: y - r * 3.2, txt: e.txt, liv: 1.1, farve: e.farve });
+    else if (e.k === "krummer") spawn(x, y - r * 0.5, 12, ["#d79a55", "#f1c98f", "#ffffff"], 240, { str: 4, liv: 0.8 });
+    else if (e.k === "plask") { spawn(x, y, 30, ["#6b3a1e", "#8a5230", "#4e2812"], 340, { op: 1.1, str: 5, liv: 0.9 }); tekster.push({ x: x, y: y - r * 2.6, txt: "Plask!", liv: 1, farve: "#ffb27a" }); }
+    else if (e.k === "splat") { spawn(x, y - r, 30, ["#ff5fa8", "#ffffff", "#ffc2e0"], 360, { op: 0.9, str: 5, liv: 0.9 }); tekster.push({ x: x, y: y - r * 2.6, txt: "Splat!", liv: 1, farve: "#ff9ccb" }); }
+    else if (e.k === "blok") { spawn(x, y - r, 22, ["#6fd0ff", "#ffffff"], 340, { op: 0.9, str: 4, liv: 0.8 }); tekster.push({ x: x, y: y - r * 2.6, txt: "Blokeret!", liv: 1, farve: "#9fe0ff" }); }
+    else if (e.k === "pol") { spawn(x, y, 14, ["#d9902f", "#ffd27a"], 240, { op: 0.8, str: 4, liv: 0.7 }); tekster.push({ x: x, y: y - r * 2.6, txt: "Klistret!", liv: 0.9, farve: "#ffcf7a" }); }
+    else if (e.k === "gave") spawn(x, y - r, 10, ["#ffffff", "#ffe14d", "#ff8fc7"], 220, { form: 2, str: 3, g: 300, liv: 0.5 });
+    else if (e.k === "turbo") spawn(x, y - r * 0.4, 16, ["#ffe14d", "#ff9f1c", "#ffffff"], 300, { form: 2, str: 3.5, g: 150, liv: 0.6 });
+  }
+}
+
+function tegnDuelHud() {
+  const ms = duelMs; if (!ms) return;
+  const b = Math.min(W - 16, 500), x0 = (W - b) / 2, y0 = 82;
+  c.save();
+  // placeringsbjælke
+  pille(x0, y0 + 3, b, 18, 9); c.fillStyle = "rgba(120,10,70,.3)"; c.fill();
+  pille(x0, y0, b, 18, 9); c.fillStyle = "rgba(255,255,255,.9)"; c.fill(); c.strokeStyle = "#ff8cc0"; c.lineWidth = 2.5; c.stroke();
+  const x1 = x0 + 14, x2 = x0 + b - 16;
+  for (let k = 0; k < 2; k++) for (let m = 0; m < 3; m++) { c.fillStyle = (k + m) % 2 ? "#ffffff" : "#222"; c.fillRect(x2 + k * 5 - 2, y0 + 2 + m * 5, 5, 5); }
+  const pP = klem((zp - START_Z) / DUEL_LAENGDE, 0, 1), pM = klem((ms.z - START_Z) / DUEL_LAENGDE, 0, 1);
+  const ik = function (p, d, left, ring) {
+    const x = x1 + (x2 - x1 - 8) * p, y = y0 + 9;
+    c.fillStyle = ring; c.beginPath(); c.arc(x, y, 15, 0, 6.2832); c.fill();
+    c.drawImage(donutSprite(d, left), x - 12, y - 12, 24, 24);
+  };
+  if (pP >= pM) { ik(pM, mod.donut, mod.bidder, "#6a4aa8"); ik(pP, donut, bidder, "#ff3f8a"); } else { ik(pP, donut, bidder, "#ff3f8a"); ik(pM, mod.donut, mod.bidder, "#6a4aa8"); }
+  // runde og stilling
+  c.textAlign = "center"; c.textBaseline = "middle"; c.font = "bold 15px " + FONT; c.lineJoin = "round";
+  const rt = "Runde " + D.runde + " af " + DUEL_RUNDER + "   ·   Dig " + D.score[0] + " – " + D.score[1] + " " + mod.navn;
+  c.lineWidth = 4; c.strokeStyle = "#a8195a"; c.strokeText(rt, W / 2, y0 + 38); c.fillStyle = "#ffffff"; c.fillText(rt, W / 2, y0 + 38);
+  // ting
+  const bx = x0, by = y0 + 52, bs = 62;
+  pille(bx, by + 3, bs, bs, 14); c.fillStyle = "rgba(120,10,70,.3)"; c.fill();
+  pille(bx, by, bs, bs, 14); c.fillStyle = pl.ting ? "#ffffff" : "rgba(255,255,255,.55)"; c.fill(); c.strokeStyle = pl.ting ? TING[pl.ting].farve : "#ff8cc0"; c.lineWidth = 3.5; c.stroke();
+  if (pl.ting) { const pu = 1 + 0.08 * Math.sin(tid * 8); tegnTingIkon(pl.ting, bx + bs / 2, by + bs / 2 - 2, bs * 0.34 * pu); }
+  else { c.fillStyle = "#e6b3cc"; c.font = "bold 12px " + FONT; c.fillText("ingen", bx + bs / 2, by + bs / 2); }
+  c.fillStyle = "#c2578f"; c.font = "bold 11px " + FONT; c.fillText("E / Shift", bx + bs / 2, by + bs + 10);
+  // modstanderen uden for billedet: pil og afstand
+  if (!modSkala.vis) {
+    const dz = ms.z - zp, foran = dz > 0, txt = Math.round(Math.abs(dz)) + " m  " + mod.navn;
+    c.font = "bold 15px " + FONT; const tw = c.measureText(txt).width + 44, ph = 30;
+    const px = foran ? W - 10 - tw : 10, py = foran ? y0 + 54 : H - 150;
+    pille(px, py, tw, ph, 15); c.fillStyle = "rgba(106,74,168,.92)"; c.fill(); c.strokeStyle = "#ffffff"; c.lineWidth = 2; c.stroke();
+    c.fillStyle = "#ffffff"; c.beginPath();
+    if (foran) { c.moveTo(px + 16, py + 8); c.lineTo(px + 25, py + 21); c.lineTo(px + 7, py + 21); } else { c.moveTo(px + 16, py + 22); c.lineTo(px + 25, py + 9); c.lineTo(px + 7, py + 9); }
+    c.closePath(); c.fill();
+    c.textAlign = "left"; c.fillText(txt, px + 34, py + ph / 2 + 1);
+  }
+  // mål-banner
+  if (D.foerste) {
+    const tekst = D.foerste === "p" ? "I MÅL! Du vandt runden!" : mod.navn + " er i mål først!";
+    const sz = Math.min(W * 0.075, 46);
+    c.textAlign = "center"; c.font = "bold " + Math.round(sz) + "px " + FONT; c.lineWidth = sz * 0.2; c.strokeStyle = "#a8195a";
+    c.strokeText(tekst, W / 2, H * 0.3); c.fillStyle = D.foerste === "p" ? "#ffe14d" : "#ffffff"; c.fillText(tekst, W / 2, H * 0.3);
+  }
+  c.restore();
+}
 /* ---------- Spil-løkken ---------- */
 let sidsteTid = 0;
 function loekke(nu) {
-  const dt = sidsteTid ? Math.min(0.05, Math.max(0, (nu - sidsteTid) / 1000)) : 0;
+  const dt = sidsteTid ? Math.min(0.1, Math.max(0, (nu - sidsteTid) / 1000)) : 0;
   sidsteTid = nu;
-  opdater(dt);
+  // fast tidsskala: spillet opdateres i SIM_HZ-skridt, uanset hvor ofte skærmen tegner
+  simAcc += dt;
+  const skridt = 1 / SIM_HZ;
+  let n = 0;
+  while (simAcc >= skridt && n < 12) { opdater(skridt); simAcc -= skridt; n++; }
+  if (n >= 12) simAcc = 0;
   tegn();
   window.requestAnimationFrame(loekke);
 }
