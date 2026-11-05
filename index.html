@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Donut Rider</title>
+<style>
+  html, body {
+    margin: 0; height: 100%; overflow: hidden; background: #1d1030;
+    font-family: "Arial Rounded MT Bold", "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+    color: #5a2a45; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  canvas#spil { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  .skaerm {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: none; flex-direction: column;
+    align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; text-align: center;
+    background: radial-gradient(ellipse at 50% 45%, rgba(255,190,225,.05), rgba(120,30,90,.34));
+  }
+  .skaerm.vis { display: flex; }
+  #start { padding-bottom: 24vh; }
+  .titel {
+    margin: 0 0 18px; line-height: .86; font-size: clamp(56px, 15vw, 128px); display: flex; flex-direction: column;
+    align-items: center; transform: rotate(-3deg); animation: svaev 3.4s ease-in-out infinite; letter-spacing: 1px;
+  }
+  .titel span {
+    background: linear-gradient(#fff 15%, #ffd6ea 55%, #ff63a5 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(2px 0 0 #8a1048) drop-shadow(-2px 0 0 #8a1048) drop-shadow(0 2px 0 #8a1048) drop-shadow(0 -2px 0 #8a1048) drop-shadow(0 8px 0 #8a1048) drop-shadow(0 16px 14px rgba(0,0,0,.35));
+  }
+  .titel span:last-child { margin-left: 28px; }
+  @keyframes svaev { 0%,100% { transform: rotate(-3deg) translateY(0); } 50% { transform: rotate(-1deg) translateY(-8px); } }
+  h2 { font-size: clamp(28px, 7vw, 46px); margin: 0 0 12px; color: #fff; text-shadow: 0 3px 0 #b0185a, 0 6px 14px rgba(0,0,0,.3); }
+  .panel, .boks {
+    background: linear-gradient(#fff, #ffeaf4); border-radius: 22px; box-shadow: 0 7px 0 rgba(176,24,90,.45), 0 14px 30px rgba(0,0,0,.25);
+  }
+  .panel { padding: 10px 26px; margin: 5px 0; }
+  .boks { padding: 18px 30px 20px; min-width: min(80vw, 340px); }
+  .tal { font-size: clamp(18px, 4.5vw, 24px); margin: 5px 0; font-weight: bold; }
+  .ny-rekord { font-size: clamp(22px, 6vw, 32px); color: #e08a00; font-weight: bold; margin: 8px 0; text-shadow: 0 2px 0 #fff; animation: pop .7s ease-in-out infinite alternate; }
+  @keyframes pop { from { transform: scale(1) rotate(-2deg); } to { transform: scale(1.12) rotate(2deg); } }
+  .hjaelp { font-size: 14px; line-height: 1.5; margin-top: 22px; max-width: 440px; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,.45); }
+  .knapper { display: flex; gap: 14px; margin-top: 22px; flex-wrap: wrap; justify-content: center; }
+  button {
+    font: inherit; font-weight: bold; font-size: 22px; color: #fff; background: linear-gradient(#ff7cb4, #ff3f8a 55%, #e82a78);
+    border: 0; border-radius: 18px; padding: 14px 36px; cursor: pointer; box-shadow: 0 6px 0 #a8195a, 0 10px 18px rgba(0,0,0,.25);
+    text-shadow: 0 2px 0 rgba(120,10,60,.5); touch-action: manipulation;
+  }
+  button:active { transform: translateY(4px); box-shadow: 0 2px 0 #a8195a; }
+  button.anden { background: linear-gradient(#fff, #ffe3f0); color: #ff3f8a; text-shadow: none; box-shadow: 0 6px 0 #e58ab6, 0 10px 18px rgba(0,0,0,.2); }
+  button.anden:active { box-shadow: 0 2px 0 #e58ab6; }
+  button:disabled { background: #e6c9d6; color: #fff; box-shadow: 0 6px 0 #d3b2c1; cursor: default; transform: none; text-shadow: none; }
+  #garage { justify-content: flex-start; overflow-y: auto; background: linear-gradient(#ffd3e6, #ffb6d6); -webkit-overflow-scrolling: touch; }
+  .garage-top { width: 100%; max-width: 960px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+  .garage-top h2 { margin: 0; }
+  .garage-top .tal { margin: 0; }
+  .garage-top button { font-size: 18px; padding: 10px 22px; }
+  .forhaand { width: 100%; max-width: 960px; display: flex; align-items: center; gap: 18px; justify-content: center; margin-bottom: 12px; padding: 8px 18px; box-sizing: border-box; flex-wrap: wrap; }
+  .forhaand canvas { width: 150px; height: 150px; }
+  .forhaand .info { text-align: left; min-width: 180px; }
+  .forhaand .stor { font-size: 24px; font-weight: bold; color: #ff3f8a; }
+  .forhaand .lille { font-size: 15px; line-height: 1.5; }
+  #gitter { width: 100%; max-width: 960px; display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; padding-bottom: 30px; }
+  .kort { background: #fff; border-radius: 18px; padding: 10px 10px 14px; border: 4px solid #fff; display: flex; flex-direction: column; align-items: center; box-shadow: 0 5px 0 rgba(176,24,90,.18); }
+  .kort.valgt { border-color: #ff3f8a; }
+  .kort.laast { background: #fff4f9; }
+  .kort.laast canvas { filter: saturate(.55) brightness(.97); }
+  .kort canvas { width: 78px; height: 78px; }
+  .kort .navn { font-weight: bold; font-size: 17px; margin: 2px 0 6px; }
+  .kort .linje { font-size: 13.5px; line-height: 1.45; }
+  .kort .ekstra { min-height: 39px; }
+  .kort button { font-size: 16px; padding: 9px 14px; margin-top: 10px; border-radius: 14px; width: 100%; box-shadow: 0 4px 0 #a8195a; }
+  .kort button:disabled { box-shadow: 0 4px 0 #d3b2c1; }
+  .kort button.er-valgt:disabled { background: #7bc67b; box-shadow: 0 4px 0 #5aa05a; }
+</style>
+</head>
+<body>
+<canvas id="spil"></canvas>
+
+<div id="start" class="skaerm vis">
+  <h1 class="titel"><span>Donut</span><span>Rider</span></h1>
+  <div class="panel tal" id="startRekord">Rekord: 0 m</div>
+  <div class="panel tal" id="startDonuts">Donuts: 0</div>
+  <div class="knapper">
+    <button id="knapStart">Start</button>
+    <button id="knapGarage" class="anden">Garage</button>
+  </div>
+  <div class="hjaelp">
+    Styr med piletasterne eller A og D. Hop med pil op eller mellemrum.<br>
+    På touch: hold i venstre eller højre side for at styre, og swipe op for at hoppe.<br>
+    Styr uden om slikkepinde, hop over lakridsstænger og chokoladefloder!
+  </div>
+</div>
+
+<div id="slut" class="skaerm">
+  <div class="boks">
+    <h2 id="slutTitel" style="color:#ff3f8a;text-shadow:0 3px 0 #fff">Løbet er slut</h2>
+    <div class="ny-rekord" id="slutNyRekord">Ny rekord!</div>
+    <div class="tal" id="slutMeter">Du kørte 0 m</div>
+    <div class="tal" id="slutDonuts">Du samlede 0 donuts</div>
+    <div class="tal" id="slutIalt">Du har nu 0 donuts</div>
+  </div>
+  <div class="knapper">
+    <button id="knapIgen">Prøv igen</button>
+    <button id="knapGarage2" class="anden">Garage</button>
+  </div>
+</div>
+
+<div id="garage" class="skaerm">
+  <div class="garage-top">
+    <h2>Garage</h2>
+    <div class="tal" id="garageDonuts" style="color:#fff;text-shadow:0 2px 0 #b0185a">Du har 0 donuts</div>
+    <button id="knapTilbage" class="anden">Tilbage</button>
+  </div>
+  <div class="forhaand panel">
+    <canvas id="forhaand" width="300" height="300"></canvas>
+    <div class="info"><div class="stor" id="fhNavn"></div><div class="lille" id="fhInfo"></div></div>
+  </div>
+  <div id="gitter"></div>
+</div>
+
+<script>
+(function () {
+"use strict";
+
+/* =====================================================================
+   TAL DU KAN SKRUE PÅ
+   Gør spillet lettere eller sværere ved at ændre tallene her.
+   ===================================================================== */
+const START_FART = 10;                 // fart i starten (meter pr. sekund). Lavere = lettere
+const MAKS_FART = 22;                  // den højeste fart. Lavere = lettere
+const FART_STIGNING = 0.008;           // hvor meget farten stiger pr. kørt meter. Lavere = lettere
+const FORHINDRING_AFSTAND_START = 17;  // meter fri bane mellem banestykker i starten. Højere = lettere
+const FORHINDRING_AFSTAND_MIN = 9;     // mindste fri afstand mellem banestykker. Højere = lettere
+const FORHINDRING_AFSTAND_FALD = 0.005;// hvor hurtigt afstanden bliver mindre pr. kørt meter. Lavere = lettere
+const FLOD_FRA_METER = 120;            // der kommer ingen chokoladeflod før så mange meter
+const FLOD_CHANCE = 0.2;               // chance for at næste banestykke er en chokoladeflod (0 til 1)
+const HOP_TID = 0.6;                   // hvor længe et hop varer (sekunder). Højere = lettere
+const BLINK_TID = 1;                   // hvor længe donutten er beskyttet efter et stød (sekunder)
+const STYRE_FART = 9;                  // hvor hurtigt donutten flytter sig til siden (meter pr. sekund)
+const DONUT_CHANCE = 0.8;              // chance for donuts mellem to banestykker (0 til 1)
+const MAGNET_AFSTAND = 3.5;            // hvor tæt donuts skal være, før Krymmeldonut trækker dem til sig
+/* --- Ny bane og verden --- */
+const ZONE_LAENGDE = 500;              // så mange meter varer hver verden (Flormelisbjerget, Jordbærdalen ...)
+const KURVE_STYRKE = 1;                // hvor kraftige sving er (0 = ingen sving, 1.5 = vildere)
+const BAKKE_STYRKE = 1;                // hvor høje bakkerne er (0 = flad bane)
+const FARTFELT_FART = 1.3;             // fartfelt: farten ganges med dette tal
+const KLISTRET_FART = 0.7;             // karamelfelt: farten ganges med dette tal
+const RAMPE_HOP_TID = 1.25;            // hvor længe et rampehop varer (sekunder)
+const RAMPE_HOEJDE = 3.6;              // hvor højt et rampehop går (meter)
+const HOP_HOEJDE = 1.5;                // hvor højt et almindeligt hop går (meter)
+const MOENSTER_HAARDHED = 1;           // 0 = kun de lette banestykker, 1 = normal blanding
+
+/* =====================================================================
+   ALLE DONUTS I GARAGEN
+   Ret pris og bidder her. "evne" styrer den ekstra evne.
+   ===================================================================== */
+const DONUTS = [
+  { id: "almindelig", navn: "Almindelig donut", pris: 0,     bidder: 1,  ekstra: "Ingen",                                    evne: null,       farve: "#f0c27e" },
+  { id: "sukker",     navn: "Sukkerdonut",      pris: 50,    bidder: 2,  ekstra: "Ingen",                                    evne: null,       farve: "#fff3d6" },
+  { id: "glasur",     navn: "Glasurdonut",      pris: 150,   bidder: 3,  ekstra: "Ingen",                                    evne: null,       farve: "#ff8fc7" },
+  { id: "jordbaer",   navn: "Jordbærdonut",     pris: 300,   bidder: 4,  ekstra: "Ingen",                                    evne: null,       farve: "#ff3b5c" },
+  { id: "chokolade",  navn: "Chokoladedonut",   pris: 500,   bidder: 5,  ekstra: "Styrer lidt hurtigere til siden",          evne: "styring",  farve: "#6b3a1e" },
+  { id: "vanilje",    navn: "Vaniljedonut",     pris: 800,   bidder: 6,  ekstra: "Hopper lidt længere",                      evne: "hop",      farve: "#ffe37a" },
+  { id: "krymmel",    navn: "Krymmeldonut",     pris: 1200,  bidder: 7,  ekstra: "Trækker donuts til sig, når de er tæt på", evne: "magnet",   farve: "#7fd6ff" },
+  { id: "karamel",    navn: "Karameldonut",     pris: 2000,  bidder: 8,  ekstra: "Banen ruller 10 % langsommere",            evne: "langsom",  farve: "#d2832a" },
+  { id: "regnbue",    navn: "Regnbuedonut",     pris: 3000,  bidder: 9,  ekstra: "Efterlader en regnbuestribe (kun pynt)",   evne: "regnbue",  farve: "#ff5252" },
+  { id: "lakrids",    navn: "Lakridsdonut",     pris: 4500,  bidder: 10, ekstra: "Blinker i 2 sekunder efter et stød",       evne: "blink",    farve: "#26262e" },
+  { id: "guld",       navn: "Gulddonut",        pris: 6500,  bidder: 11, ekstra: "Alle samlede donuts tæller dobbelt",       evne: "dobbelt",  farve: "#ffc21f" },
+  { id: "galakse",    navn: "Galaksedonut",     pris: 10000, bidder: 12, ekstra: "Hopper meget længere",                     evne: "superhop", farve: "#4b22c9" }
+];
+
+/* Udseende af donutterne (kun pynt, påvirker ikke spillet) */
+const STIL = {
+  almindelig: { g1: "#ecb978", g2: "#d79a4f", drys: ["#fff3d6"], dryst: "prik", mat: true },
+  sukker:     { g1: "#fffaf0", g2: "#f0e2c8", drys: ["#ffffff", "#ffe7b0"], dryst: "prik" },
+  glasur:     { g1: "#ffa6d4", g2: "#ff5fa8", drys: ["#ffffff", "#ffe14d", "#7fd6ff", "#b2ff8a"], dryst: "stav" },
+  jordbaer:   { g1: "#ff7a8e", g2: "#df2342", drys: ["#ffe9a0"], dryst: "prik" },
+  chokolade:  { g1: "#86532f", g2: "#3b1d0c", drys: ["#fff3d6"], dryst: "stav" },
+  vanilje:    { g1: "#fff4b8", g2: "#ffd957", drys: ["#9a7430"], dryst: "prik" },
+  krymmel:    { g1: "#a6e6ff", g2: "#4fb4f0", drys: ["#ff3f8a", "#ffd23f", "#4cd964", "#ffffff", "#7b4dff"], dryst: "stav", meget: true },
+  karamel:    { g1: "#f0aa4a", g2: "#aa5c14", drys: ["#fff0c8"], dryst: "stav" },
+  regnbue:    { g1: "#ff6b6b", g2: "#6b6bff", drys: ["#ffffff"], dryst: "prik", regn: true },
+  lakrids:    { g1: "#42424e", g2: "#0f0f16", drys: ["#ff4d8d", "#ffffff"], dryst: "stav", mat: true },
+  guld:       { g1: "#fff08a", g2: "#e29a00", drys: ["#fff7c2"], dryst: "prik", fx: "guld" },
+  galakse:    { g1: "#6a3df0", g2: "#160860", drys: ["#ffffff", "#9fe8ff", "#ff9df0"], dryst: "prik", fx: "galakse", meget: true }
+};
+
+/* Verdener. Skifter hver ZONE_LAENGDE meter. Kun farver og pynt. */
+const ZONER = [
+  { navn: "Flormelisbjerget", skyTop: "#6fc0ff", skyBot: "#ffd9ee", sol: "#fff4b8", bjerg1: "#c4d9ff", bjerg2: "#9fbdf0", jord1: "#ffc4dd", jord2: "#ffb4d4", vej1: "#fffdfb", vej2: "#f5ecf2", kant1: "#ff3f8a", kant2: "#ffffff", streg: "#e6d2df", star: 0 },
+  { navn: "Jordbærdalen",     skyTop: "#ff9ec6", skyBot: "#ffe9d0", sol: "#ffffff", bjerg1: "#ffa6b2", bjerg2: "#f27289", jord1: "#a9e98c", jord2: "#97dc79", vej1: "#fff3f3", vej2: "#ffe4e8", kant1: "#e0233f", kant2: "#ffffff", streg: "#ffc6d0", star: 0 },
+  { navn: "Chokoladeskoven",  skyTop: "#c98b5b", skyBot: "#ffe2bb", sol: "#fff0cf", bjerg1: "#b07a4f", bjerg2: "#85532f", jord1: "#8c5733", jord2: "#7c4b2a", vej1: "#f5dec3", vej2: "#ecd2b2", kant1: "#4e2812", kant2: "#ffd9a0", streg: "#d8b88e", star: 0 },
+  { navn: "Nattehimlen",      skyTop: "#150a3d", skyBot: "#6b3fb5", sol: "#e8e2ff", bjerg1: "#4f2e98", bjerg2: "#33206b", jord1: "#2b1b60", jord2: "#24164f", vej1: "#ddd6ff", vej2: "#cbc1f8", kant1: "#7be7ff", kant2: "#ff7be5", streg: "#a898e8", star: 1 }
+];
+const PAL_FARVER = ["skyTop", "skyBot", "sol", "bjerg1", "bjerg2", "jord1", "jord2", "vej1", "vej2", "kant1", "kant2", "streg"];
+
+/* ---------- Faste mål (behøver normalt ikke ændres) ---------- */
+const SEG = 1.1;            // længde af ét banestykke (meter)
+const SEG_SYN = 130;        // så mange banestykker kan man se frem
+const KAMERA_BAGUD = 5.5;   // kameraet er så mange meter bag donutten
+const KAMERA_HOEJDE = 3.7;  // kameraets højde over banen (meter)
+const FOV_D = 1.0;          // dybde i billedet (højere = mere zoom)
+const START_Z = 8;          // donuttens startplads på banen
+const BANE_HALV = 5;        // banen er normalt 10 meter bred
+const SPILLER_R = 0.8;      // donuttens størrelse (meter)
+const RAMME_R = 0.5;        // donuttens størrelse, når vi tjekker stød
+const FLOD_SEGS = 2;        // chokoladefloden er så mange banestykker lang
+const FLOD_DYBDE = FLOD_SEGS * SEG;
+const RAMPE_SEGS = 5;       // rampens længde i banestykker
+const RAMPE_H = 1.1;        // rampens højde ved toppen (meter)
+const SWIPE_PX = 34;        // hvor langt man skal swipe op for at hoppe
+const REGNBUE = ["#ff4d4d", "#ff9f1c", "#ffe14d", "#4cd964", "#3fa9ff", "#a259ff"];
+const SLIK_FARVER = ["#ff3f8a", "#3fa9ff", "#4cd964", "#ff9f1c", "#a259ff"];
+const FONT = '"Arial Rounded MT Bold", "Trebuchet MS", "Segoe UI", system-ui, sans-serif';
+
+/* ---------- Gemte data (localStorage) - samme nøgle som før ---------- */
+const GEM_NOEGLE = "donutRider_v1";
+let gemt = { donuts: 0, ejede: ["almindelig"], valgt: "almindelig", rekord: 0 };
+
+function findDonut(id) {
+  for (let i = 0; i < DONUTS.length; i++) if (DONUTS[i].id === id) return DONUTS[i];
+  return DONUTS[0];
+}
+function hentGemt() {
+  try {
+    const tekst = window.localStorage.getItem(GEM_NOEGLE);
+    if (!tekst) return;
+    const d = JSON.parse(tekst);
+    if (!d || typeof d !== "object") return;
+    if (typeof d.donuts === "number" && d.donuts >= 0) gemt.donuts = Math.floor(d.donuts);
+    if (typeof d.rekord === "number" && d.rekord >= 0) gemt.rekord = Math.floor(d.rekord);
+    if (Array.isArray(d.ejede)) {
+      d.ejede.forEach(function (id) {
+        if (findDonut(id).id === id && gemt.ejede.indexOf(id) < 0) gemt.ejede.push(id);
+      });
+    }
+    if (typeof d.valgt === "string" && gemt.ejede.indexOf(d.valgt) >= 0) gemt.valgt = d.valgt;
+  } catch (e) { /* localStorage findes ikke - spillet virker stadig */ }
+}
+function gemNu() {
+  try { window.localStorage.setItem(GEM_NOEGLE, JSON.stringify(gemt)); } catch (e) { /* ignorer */ }
+}
+
+/* ---------- Små hjælpere ---------- */
+function tal(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
+function klem(v, a, b) { return v < a ? a : (v > b ? b : v); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function tilf(i) { const s = Math.sin(i * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }
+function rnd(a, b) { return a + Math.random() * (b - a); }
+function smooth(t) { t = klem(t, 0, 1); return t * t * (3 - 2 * t); }
+function el(id) { return document.getElementById(id); }
+const _rc = {};
+function rgbAf(h) { if (_rc[h]) return _rc[h]; const n = parseInt(h.slice(1), 16); return (_rc[h] = [n >> 16 & 255, n >> 8 & 255, n & 255]); }
+function mix(a, b, t) {
+  const A = rgbAf(a), B = rgbAf(b);
+  const r = Math.round(A[0] + (B[0] - A[0]) * t), g = Math.round(A[1] + (B[1] - A[1]) * t), bl = Math.round(A[2] + (B[2] - A[2]) * t);
+  return "#" + ((1 << 24) + (r << 16) + (g << 8) + bl).toString(16).slice(1);
+}
+function lys(h, t) { return mix(h, "#ffffff", t); }
+function moerk(h, t) { return mix(h, "#000000", t); }
+function blendPal(i, j, t) {
+  const a = ZONER[i % ZONER.length], b = ZONER[j % ZONER.length], r = { navn: b.navn, star: lerp(a.star, b.star, t) };
+  for (let k = 0; k < PAL_FARVER.length; k++) r[PAL_FARVER[k]] = mix(a[PAL_FARVER[k]], b[PAL_FARVER[k]], t);
+  return r;
+}
+function lavLaerred(b, h) { const k = document.createElement("canvas"); k.width = b; k.height = h; return k; }
+
+/* =====================================================================
+   BANEN: bygges af korte banestykker (SEG meter) og håndlavede mønstre
+   ===================================================================== */
+let segs = [], segBase = 0, gen = null, tomBane = false;
+function seg(i) { return segs[i - segBase]; }
+function fartVed(m) { return Math.min(MAKS_FART, START_FART + m * FART_STIGNING); }
+function afstandVed(m) { return Math.max(FORHINDRING_AFSTAND_MIN, FORHINDRING_AFSTAND_START - m * FORHINDRING_AFSTAND_FALD); }
+
+function nyGen() { gen = { i: 0, y: 0, w: 1, sidste: "", sidsteFlod: false }; segs = []; segBase = 0; }
+
+function nySeg(y, curve, w) {
+  const i = gen.i++;
+  const s = { i: i, y: y, curve: curve, w: w, zone: Math.floor(i * SEG / ZONE_LAENGDE) % ZONER.length, ting: [], dek: [],
+              flod: 0, boost: 0, sticky: 0, ramp: 0, lip: false, bue: false, alt: Math.floor(i / 3) % 2 };
+  if (i % 4 === 0) {
+    for (let side = -1; side <= 1; side += 2) {
+      if (tilf(i * 7.1 + side) > 0.3) s.dek.push({ side: side, kind: Math.floor(tilf(i * 3.3 + side * 5) * 3), off: 1.8 + tilf(i * 1.7 + side) * 5, sc: 0.85 + tilf(i * 9.1 + side) * 0.6 });
+    }
+  }
+  if (i > 0 && Math.floor(i * SEG / ZONE_LAENGDE) !== Math.floor((i - 1) * SEG / ZONE_LAENGDE)) s.bue = true;
+  segs.push(s);
+  return s;
+}
+
+// Laver n banestykker med blød ændring af sving, højde og bredde. Returnerer første stykkes nummer.
+function lavTerraen(n, kurve, dy, wMaal) {
+  const s0 = gen.i, y0 = gen.y, w0 = gen.w;
+  for (let k = 0; k < n; k++) {
+    const t = n > 1 ? k / (n - 1) : 1;
+    nySeg(y0 + dy * smooth(t), kurve((k + 0.5) / n) * KURVE_STYRKE, w0 + (wMaal - w0) * smooth(k / Math.max(6, n * 0.45)));
+  }
+  gen.y = y0 + dy; gen.w = wMaal;
+  return s0;
+}
+
+/* Hjælpere der sætter ting på banen. k = hvor langt inde i stykket (i banestykker). */
+function put(s0, k, o) { const sg = seg(s0 + Math.floor(k)); o.pos = (s0 + k) * SEG; sg.ting.push(o); return o; }
+function halv(s0, k) { return BANE_HALV * seg(s0 + Math.floor(k)).w; }
+function bx(s0, k, f) { return f * (halv(s0, k) - 1.1); }
+function lol(s0, k, f) { put(s0, k, { tp: "slik", x: bx(s0, k, f), farve: Math.floor(Math.random() * SLIK_FARVER.length), ramt: false }); }
+function bar(s0, k, side, daekker) {
+  const h = halv(s0, k); daekker = Math.min(daekker, 2 * h - 3.4);
+  const x1 = side < 0 ? -h : (side > 0 ? h - daekker : -daekker / 2);
+  put(s0, k, { tp: "lakrids", x1: x1, x2: x1 + daekker, ramt: false });
+}
+function frit(s0, k, x) {
+  const f = Math.floor(k);
+  for (let d = -2; d <= 2; d++) {
+    const sg = seg(s0 + f + d); if (!sg) continue;
+    for (let j = 0; j < sg.ting.length; j++) {
+      const o = sg.ting[j];
+      if (o.tp === "slik" && Math.abs(o.x - x) < 1.9) return false;
+      if (o.tp === "lakrids" && Math.abs(d) < 1 && x > o.x1 - 0.8 && x < o.x2 + 0.8) return false;
+    }
+  }
+  return true;
+}
+function moent(s0, k, f, h) {
+  const x = bx(s0, k, f);
+  if (h > 1.5 || frit(s0, k, x)) put(s0, k, { tp: "donut", x: x, h: h, vaek: false, fase: Math.random() * 6.28 });
+}
+function raekke(s0, k0, k1, f0, f1, n, h) {
+  for (let i = 0; i < n; i++) {
+    const u = n > 1 ? i / (n - 1) : 0.5;
+    moent(s0, k0 + (k1 - k0) * u, lerp(f0, f1, u), typeof h === "function" ? h(u) : h);
+  }
+}
+function slange(s0, k0, k1, amp, n, h) { // donuts i en slange fra venstre til højre
+  for (let i = 0; i < n; i++) { const u = n > 1 ? i / (n - 1) : 0.5; moent(s0, k0 + (k1 - k0) * u, amp * Math.sin(u * 6.28), h); }
+}
+
+/* Banemønstre. len = længde i banestykker, kurve = sving (a = styrke, f = form), dy = bakke (meter), w = bredde. */
+const MOENSTRE = [
+  { navn: "lige", fra: 0, v: 5, len: function () { return 28; }, kurve: { a: 0, f: "bump" }, dy: 0, w: 1,
+    bygg: function (s0, n) { lol(s0, 10, rnd(-0.7, 0.7)); raekke(s0, 15, 25, rnd(-0.8, 0.8), rnd(-0.8, 0.8), 5, 0.6); } },
+  { navn: "slalom", fra: 0, v: 6, len: function () { return 48; }, kurve: { a: 0.004, f: "sin2" }, dy: 0, w: 1,
+    bygg: function (s0, n) { let f = -0.65; for (let k = 8; k < n - 6; k += 11) { lol(s0, k, f); f = -f; } slange(s0, 6, n - 6, 0.5, 8, 0.6); } },
+  { navn: "lakridsraekke", fra: 50, v: 5, len: function () { return 40; }, kurve: { a: 0, f: "bump" }, dy: 0, w: 1,
+    bygg: function (s0, n) {
+      const sd = Math.random() < 0.5 ? -1 : 1;
+      bar(s0, 11, sd, rnd(4, 6));
+      raekke(s0, 9, 13, sd * 0.4, sd * 0.4, 3, function (u) { return 1.0 + 1.1 * Math.sin(u * Math.PI); });
+      bar(s0, 28, -sd, rnd(4, 6));
+      raekke(s0, 26, 30, -sd * 0.4, -sd * 0.4, 3, function (u) { return 1.0 + 1.1 * Math.sin(u * Math.PI); });
+    } },
+  { navn: "sving", fra: 30, v: 6, len: function () { return 64; }, kurve: { a: 0.011, f: "bump" }, dy: 0, w: 1,
+    bygg: function (s0, n) { lol(s0, 20, rnd(-0.7, 0.7)); lol(s0, 44, rnd(-0.7, 0.7)); slange(s0, 6, n - 6, 0.6, 9, 0.6); } },
+  { navn: "bakke", fra: 20, v: 5, len: function () { return 60; }, kurve: { a: 0.003, f: "sin2" }, dy: 5.5, bakke: true, w: 1,
+    bygg: function (s0, n) { lol(s0, 16, rnd(-0.7, 0.7)); lol(s0, 34, rnd(-0.7, 0.7)); raekke(s0, 40, 54, rnd(-0.6, 0.6), rnd(-0.6, 0.6), 5, 0.6); } },
+  { navn: "smal", fra: 80, v: 4, len: function () { return 54; }, kurve: { a: 0.003, f: "sin2" }, dy: 0, w: 0.7,
+    bygg: function (s0, n) { lol(s0, 16, -0.6); lol(s0, 27, 0.6); lol(s0, 38, -0.4); slange(s0, 8, n - 6, 0.4, 8, 0.6); } },
+  { navn: "bred", fra: 40, v: 4, len: function () { return 46; }, kurve: { a: 0, f: "bump" }, dy: 0, w: 1.35,
+    bygg: function (s0, n) { lol(s0, 14, -0.75); lol(s0, 22, 0.75); lol(s0, 30, 0); raekke(s0, 34, 42, 0.5, -0.5, 5, 0.6); } },
+  { navn: "rampe", fra: 60, v: 5, len: function (fart) { return 20 + Math.ceil(RAMPE_HOP_TID * fart * 1.05 / SEG); }, kurve: { a: 0, f: "bump" }, dy: 0, w: 1,
+    bygg: function (s0, n, fart) {
+      for (let i = 0; i < RAMPE_SEGS; i++) seg(s0 + 7 + i).ramp = i + 1;
+      seg(s0 + 7 + RAMPE_SEGS - 1).lip = true;
+      const k0 = 7 + RAMPE_SEGS, dist = RAMPE_HOP_TID * fart / SEG, f = rnd(-0.4, 0.4);
+      raekke(s0, k0 + dist * 0.12, k0 + dist * 0.88, f, f, 7, function (u) { return 0.4 + RAMPE_HOEJDE * 0.8 * Math.sin(u * Math.PI); });
+      raekke(s0, 2, 6, rnd(-0.5, 0.5), rnd(-0.5, 0.5), 3, 0.6);
+    } },
+  { navn: "turbo", fra: 50, v: 4, len: function () { return 42; }, kurve: { a: 0.006, f: "sin2" }, dy: 0, w: 1,
+    bygg: function (s0, n) { for (let k = 6; k < 22; k++) seg(s0 + k).boost = 1; slange(s0, 6, 30, 0.7, 11, 0.6); } },
+  { navn: "karamel", fra: 100, v: 4, len: function () { return 46; }, kurve: { a: 0.004, f: "sin2" }, dy: 0, w: 1,
+    bygg: function (s0, n) { for (let k = 4; k < 34; k++) seg(s0 + k).sticky = 1; lol(s0, 10, -0.6); lol(s0, 18, 0.6); lol(s0, 26, -0.5); slange(s0, 6, n - 8, 0.5, 8, 0.6); } },
+  { navn: "skov", fra: 300, v: 4, len: function () { return 66; }, kurve: { a: 0.005, f: "sin2" }, dy: 0, w: 1,
+    bygg: function (s0, n) { const fs = [-0.7, 0.1, 0.8, -0.2, 0.6, -0.8]; for (let i = 0; i < fs.length; i++) lol(s0, 8 + i * 9, fs[i]); } },
+  { navn: "bakkeSving", fra: 200, v: 4, len: function () { return 72; }, kurve: { a: 0.009, f: "bump" }, dy: 6, bakke: true, w: 1,
+    bygg: function (s0, n) { lol(s0, 24, rnd(-0.7, 0.7)); bar(s0, 46, Math.random() < 0.5 ? -1 : 1, 5); slange(s0, 8, n - 8, 0.5, 9, 0.6); } }
+];
+const FLOD_MOENSTER = { navn: "flod", len: function (fart) { return flodFoer(fart) + FLOD_SEGS + flodEfter(fart); }, kurve: { a: 0, f: "bump" }, dy: 0, w: 1 };
+function flodFoer(fart) { return Math.ceil(Math.max(14, fart * FARTFELT_FART * 1.1) / SEG); }
+function flodEfter(fart) { return Math.ceil(Math.max(8, fart * 0.9) / SEG); }
+
+function kurveVaerdi(k, t, dir) {
+  if (!k.a) return 0;
+  return k.a * dir * (k.f === "sin2" ? Math.sin(t * 6.2832) : Math.sin(t * Math.PI));
+}
+
+function lavMoenster(m, fart, pos) {
+  const dir = Math.random() < 0.5 ? -1 : 1;
+  let dy = m.dy * BAKKE_STYRKE;
+  if (dy) { dy = (gen.y > 6 ? -1 : (gen.y < -6 ? 1 : dir)) * dy; }
+  const n = m.len(fart);
+  const s0 = lavTerraen(n, function (t) { return kurveVaerdi(m.kurve, t, dir); }, dy, m.w);
+  if (tomBane) return;
+  if (m === FLOD_MOENSTER) {
+    const f0 = flodFoer(fart);
+    for (let i = 0; i < FLOD_SEGS; i++) seg(s0 + f0 + i).flod = 1;
+    const mid = f0 + FLOD_SEGS / 2, f = rnd(-0.3, 0.3);
+    raekke(s0, mid - 3.5, mid + 3.5, f, f, 3, function (u) { return 1.0 + 0.8 * Math.sin(u * Math.PI); });
+    raekke(s0, 3, f0 - 6, rnd(-0.6, 0.6), rnd(-0.6, 0.6), 4, 0.6);
+  } else {
+    m.bygg(s0, n, fart);
+  }
+}
+
+function lavMellemrum(fart, pos, minSegs) {
+  let n = Math.ceil(afstandVed(pos) / SEG * rnd(0.85, 1.25));
+  n = Math.max(n, minSegs || 0, 6);
+  const s0 = lavTerraen(n, function () { return 0; }, 0, gen.w);
+  if (!tomBane && n > 12 && Math.random() < DONUT_CHANCE) raekke(s0, 3, n - 3, rnd(-0.8, 0.8), rnd(-0.8, 0.8), Math.min(6, Math.floor(n / 3)), 0.6);
+}
+
+function vaelgMoenster(km) {
+  const kan = [];
+  let sum = 0;
+  for (let i = 0; i < MOENSTRE.length; i++) {
+    const m = MOENSTRE[i];
+    if (m.navn === gen.sidste) continue;
+    const fra = m.fra * (0.4 + 0.6 * MOENSTER_HAARDHED);
+    if (km < fra && m.fra > 0) continue;
+    kan.push(m); sum += m.v;
+  }
+  let r = Math.random() * sum;
+  for (let i = 0; i < kan.length; i++) { r -= kan[i].v; if (r <= 0) return kan[i]; }
+  return kan[0];
+}
+
+function lavNaeste() {
+  const pos = gen.i * SEG, km = Math.max(0, pos - START_Z), fart = fartVed(km);
+  const flod = !gen.sidsteFlod && km >= FLOD_FRA_METER && Math.random() < FLOD_CHANCE;
+  lavMellemrum(fart, km, flod ? 0 : 0);
+  const m = flod ? FLOD_MOENSTER : vaelgMoenster(km);
+  lavMoenster(m, fart, km);
+  gen.sidste = m.navn; gen.sidsteFlod = flod;
+}
+
+function byggTil(z) { while (gen.i * SEG < z) lavNaeste(); }
+
+function startBane(tom) {
+  tomBane = !!tom;
+  nyGen();
+  const s0 = lavTerraen(40, function () { return 0; }, 0, 1);
+  if (!tomBane) raekke(s0, 14, 34, 0, 0, 5, 0.6);
+  gen.sidste = "start";
+}
+
+/* =====================================================================
+   SPRITES: tegnes én gang til skjulte lærreder og genbruges
+   ===================================================================== */
+STIL.moent = { g1: "#ffa6d4", g2: "#ff5fa8", drys: ["#ffffff", "#ffe14d", "#7fd6ff"], dryst: "stav" };
+const MOENT_D = { id: "moent", bidder: 1 };
+const donutCache = {};
+
+function glasurSti(k, hulR, dryp) {
+  k.beginPath();
+  const N = 140;
+  for (let i = 0; i <= N; i++) {
+    const a = i / N * 6.2832;
+    const dr = Math.pow(Math.max(0, Math.sin(a * 11 + 0.5)), 5) * 9;
+    const r = 84 + 5 * Math.sin(a * 7 + 1) + 3 * Math.sin(a * 3 + 2) + dr * dryp;
+    const x = Math.cos(a) * r, y = Math.sin(a) * r;
+    if (i) k.lineTo(x, y); else k.moveTo(x, y);
+  }
+  k.closePath();
+  k.moveTo(hulR, 0); k.arc(0, 0, hulR, 0, 6.2832, true);
+}
+
+function bygDonut(d, left) {
+  const st = STIL[d.id] || STIL.almindelig, max = d.bidder, tabt = max - left;
+  const cv = lavLaerred(300, 300), k = cv.getContext("2d");
+  const frø = (d.id.charCodeAt(0) * 7 + d.id.length * 13) % 50;
+  k.translate(150, 150);
+  // dejen
+  k.beginPath(); k.arc(0, 0, 100, 0, 6.2832); k.arc(0, 0, 34, 0, 6.2832, true);
+  let g = k.createRadialGradient(0, 0, 30, 0, 0, 100);
+  g.addColorStop(0, "#f0c07c"); g.addColorStop(0.55, "#dca058"); g.addColorStop(1, "#a8692a");
+  k.fillStyle = g; k.fill();
+  // glasuren
+  glasurSti(k, 47, 1);
+  g = k.createLinearGradient(-80, -90, 80, 90); g.addColorStop(0, st.g1); g.addColorStop(1, st.g2);
+  k.fillStyle = g; k.fill();
+  k.save(); glasurSti(k, 47, 1); k.clip();
+  if (st.regn) {
+    for (let i = 0; i < 12; i++) { k.beginPath(); k.moveTo(0, 0); k.arc(0, 0, 130, i / 12 * 6.2832, (i + 1.04) / 12 * 6.2832); k.closePath(); k.fillStyle = REGNBUE[i % 6]; k.fill(); }
+  }
+  if (st.fx === "galakse") {
+    const bl = [[-40, -30, 70, "rgba(255,90,220,.40)"], [45, 20, 80, "rgba(40,200,255,.32)"], [-10, 55, 60, "rgba(160,90,255,.4)"], [30, -55, 50, "rgba(255,150,240,.28)"]];
+    for (let i = 0; i < bl.length; i++) { const q = bl[i], rg = k.createRadialGradient(q[0], q[1], 0, q[0], q[1], q[2]); rg.addColorStop(0, q[3]); rg.addColorStop(1, "rgba(0,0,0,0)"); k.fillStyle = rg; k.fillRect(-100, -100, 200, 200); }
+  }
+  if (d.id === "karamel") {
+    k.strokeStyle = "rgba(255,225,150,.65)"; k.lineWidth = 5; k.lineCap = "round";
+    for (let i = 0; i < 7; i++) { k.beginPath(); k.arc(0, 0, 58 + (i % 3) * 9, i * 0.9, i * 0.9 + 0.7); k.stroke(); }
+  }
+  if (!st.mat) { // glasurens kant får lidt skygge indad
+    k.strokeStyle = "rgba(255,255,255,.22)"; k.lineWidth = 7; glasurSti(k, 47, 1); k.stroke();
+  }
+  k.restore();
+  k.strokeStyle = "rgba(60,20,10,.22)"; k.lineWidth = 2.5; glasurSti(k, 47, 1); k.stroke();
+  // drys
+  const antal = st.meget ? 56 : 30;
+  for (let i = 0; i < antal; i++) {
+    const a = tilf(i * 2.1 + frø) * 6.2832, r = 56 + tilf(i * 3.7 + frø) * 26;
+    const x = Math.cos(a) * r, y = Math.sin(a) * r, col = st.drys[i % st.drys.length];
+    k.fillStyle = col;
+    if (st.dryst === "stav") {
+      k.save(); k.translate(x, y); k.rotate(tilf(i * 5.3 + frø) * 3.14);
+      k.beginPath(); k.moveTo(-7, -2.4); k.lineTo(7, -2.4); k.arc(7, 0, 2.4, -1.57, 1.57); k.lineTo(-7, 2.4); k.arc(-7, 0, 2.4, 1.57, 4.71); k.fill();
+      k.restore();
+    } else { k.beginPath(); k.arc(x, y, d.id === "galakse" ? 2.4 + tilf(i) * 2 : 3.6, 0, 6.2832); k.fill(); }
+  }
+  // bidemærker: hver mistet bid er en skive af ringen med tandaftryk
+  if (tabt > 0) {
+    const half = Math.PI / max, a0 = -1.5708;
+    k.globalCompositeOperation = "destination-out"; k.fillStyle = "#000";
+    for (let j = 0; j < tabt; j++) {
+      const th = a0 + (j + 0.5) * 2 * half;
+      k.beginPath(); k.moveTo(0, 0); k.arc(0, 0, 140, th - half - 0.002, th + half + 0.002); k.closePath(); k.fill();
+    }
+    const kanter = [a0 + 0, a0 + tabt * 2 * half];
+    for (let e = 0; e < 2; e++) {
+      for (let r = 40; r < 100; r += 13) {
+        const off = (e === 0 ? 1 : -1) * 0;
+        k.beginPath(); k.arc(Math.cos(kanter[e]) * r, Math.sin(kanter[e]) * r, 6.5, 0, 6.2832); k.fill();
+      }
+    }
+    k.globalCompositeOperation = "source-atop"; k.strokeStyle = "#f1cc8c"; k.lineWidth = 8; k.lineCap = "butt";
+    for (let e = 0; e < 2; e++) { k.beginPath(); k.moveTo(Math.cos(kanter[e]) * 30, Math.sin(kanter[e]) * 30); k.lineTo(Math.cos(kanter[e]) * 104, Math.sin(kanter[e]) * 104); k.stroke(); }
+    k.globalCompositeOperation = "source-over";
+  }
+  return cv;
+}
+function donutSprite(d, left) {
+  const key = d.id + "|" + left;
+  return donutCache[key] || (donutCache[key] = bygDonut(d, left));
+}
+function donutSkygge(d, left) {
+  const key = d.id + "|" + left + "|s";
+  if (donutCache[key]) return donutCache[key];
+  const src = donutSprite(d, left), cv = lavLaerred(300, 300), k = cv.getContext("2d");
+  k.drawImage(src, 0, 0);
+  k.globalCompositeOperation = "source-atop"; k.fillStyle = "rgba(95,40,10,.62)"; k.fillRect(0, 0, 300, 300);
+  return (donutCache[key] = cv);
+}
+
+// Tegner en 3D-agtig donut. r = radius i pixels. o: flat, tykkelse, lean, sx, sy, tid, glans
+function tegnDonut3D(k, x, y, r, d, left, rot, o) {
+  o = o || {};
+  const spr = donutSprite(d, left), sk = donutSkygge(d, left);
+  const flat = o.flat || 0.8, th = o.tykkelse === undefined ? r * 0.2 : o.tykkelse, sc = r / 100, st = STIL[d.id] || STIL.almindelig;
+  k.save(); k.translate(x, y); k.rotate(o.lean || 0); k.scale(o.sx || 1, o.sy || 1);
+  for (let i = 4; i >= 1 && th > 0.5; i--) {
+    k.save(); k.translate(0, th * i / 4); k.scale(1, flat); k.rotate(rot); k.scale(sc, sc); k.drawImage(sk, -150, -150); k.restore();
+  }
+  k.save(); k.scale(1, flat); k.rotate(rot); k.scale(sc, sc); k.drawImage(spr, -150, -150); k.restore();
+  // glans og lys (drejer ikke med)
+  k.save(); k.scale(1, flat);
+  const ga = st.mat ? 0.28 : 0.7;
+  k.lineCap = "round";
+  k.strokeStyle = "rgba(255,255,255," + ga + ")"; k.lineWidth = Math.max(1, r * 0.1);
+  k.beginPath(); k.arc(0, 0, r * 0.64, Math.PI * 1.08, Math.PI * 1.42); k.stroke();
+  k.lineWidth = Math.max(1, r * 0.05); k.strokeStyle = "rgba(255,255,255," + ga * 0.7 + ")";
+  k.beginPath(); k.arc(0, 0, r * 0.72, Math.PI * 1.5, Math.PI * 1.62); k.stroke();
+  k.strokeStyle = "rgba(255,230,200," + (st.mat ? 0.1 : 0.22) + ")"; k.lineWidth = Math.max(1, r * 0.05);
+  k.beginPath(); k.arc(0, 0, r * 0.56, 0.2, 0.9); k.stroke();
+  const t = o.tid || 0;
+  if (st.fx === "guld" || st.fx === "galakse") {
+    k.save();
+    k.beginPath(); k.arc(0, 0, r * 0.86, 0, 6.2832); k.arc(0, 0, r * 0.46, 0, 6.2832, true); k.clip();
+    if (st.fx === "guld") {
+      const bx = Math.sin(t * 2.2) * r * 1.3, gr = k.createLinearGradient(bx - r * 0.4, -r, bx + r * 0.4, r);
+      gr.addColorStop(0, "rgba(255,255,255,0)"); gr.addColorStop(0.5, "rgba(255,255,255,.75)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+      k.fillStyle = gr; k.fillRect(-r, -r, 2 * r, 2 * r);
+    }
+    k.restore();
+    for (let i = 0; i < 5; i++) {
+      const a = tilf(i * 4.1) * 6.2832, rr = r * (0.55 + tilf(i * 2.3) * 0.28), al = Math.max(0, Math.sin(t * 3 + i * 1.9));
+      if (al < 0.05) continue;
+      const sx = Math.cos(a) * rr, sy = Math.sin(a) * rr, s = r * 0.1 * (0.6 + al);
+      k.fillStyle = "rgba(255,255,255," + al + ")";
+      k.beginPath(); k.moveTo(sx, sy - s * 2); k.lineTo(sx + s * 0.5, sy - s * 0.5); k.lineTo(sx + s * 2, sy); k.lineTo(sx + s * 0.5, sy + s * 0.5);
+      k.lineTo(sx, sy + s * 2); k.lineTo(sx - s * 0.5, sy + s * 0.5); k.lineTo(sx - s * 2, sy); k.lineTo(sx - s * 0.5, sy - s * 0.5); k.closePath(); k.fill();
+    }
+  }
+  k.restore();
+  k.restore();
+}
+
+/* Slikkepinde */
+const lolCache = [];
+function lolSprite(f) {
+  if (lolCache[f]) return lolCache[f];
+  const cv = lavLaerred(120, 214), k = cv.getContext("2d"), col = SLIK_FARVER[f];
+  let g = k.createLinearGradient(54, 0, 66, 0); g.addColorStop(0, "#c7adbb"); g.addColorStop(0.4, "#ffffff"); g.addColorStop(1, "#c9b2c0");
+  k.fillStyle = g; k.beginPath(); k.moveTo(54, 90); k.lineTo(66, 90); k.lineTo(66, 206); k.arc(60, 206, 6, 0, 3.1416); k.closePath(); k.fill();
+  g = k.createRadialGradient(42, 40, 4, 60, 58, 58); g.addColorStop(0, lys(col, 0.6)); g.addColorStop(0.5, col); g.addColorStop(1, moerk(col, 0.28));
+  k.fillStyle = g; k.beginPath(); k.arc(60, 58, 54, 0, 6.2832); k.fill();
+  k.strokeStyle = "#ffffff"; k.lineWidth = 9; k.lineCap = "round"; k.beginPath();
+  for (let i = 0; i <= 60; i++) { const a = i / 60 * 12.2, r = 46 * i / 60; const x = 60 + Math.cos(a) * r, y = 58 + Math.sin(a) * r; if (i) k.lineTo(x, y); else k.moveTo(x, y); }
+  k.stroke();
+  k.strokeStyle = "rgba(60,10,40,.35)"; k.lineWidth = 3; k.beginPath(); k.arc(60, 58, 54, 0, 6.2832); k.stroke();
+  k.fillStyle = "rgba(255,255,255,.55)"; k.beginPath(); k.ellipse(40, 34, 14, 8, -0.7, 0, 6.2832); k.fill();
+  return (lolCache[f] = cv);
+}
+
+/* Candyfloss-skyer */
+const skyCache = [];
+function skySprite(v) {
+  if (skyCache[v]) return skyCache[v];
+  const cv = lavLaerred(280, 120), k = cv.getContext("2d"), cols = ["#fff4fb", "#eaf5ff", "#ffe8f5"];
+  const bl = [[60, 80, 36], [100, 62, 44], [150, 70, 48], [200, 78, 36], [120, 88, 40], [175, 90, 32], [35, 92, 26]];
+  for (let i = 0; i < bl.length; i++) {
+    const b = bl[i], rg = k.createRadialGradient(b[0] - 8, b[1] - 12, 4, b[0], b[1], b[2]);
+    rg.addColorStop(0, "#ffffff"); rg.addColorStop(1, cols[v % 3]);
+    k.fillStyle = rg; k.beginPath(); k.arc(b[0], b[1], b[2], 0, 6.2832); k.fill();
+  }
+  return (skyCache[v] = cv);
+}
+
+/* Pynt langs banen. 140 x 240, bunden i midten er jorden */
+const dekCache = {};
+function blob(k, x, y, r, col) { k.fillStyle = col; k.beginPath(); k.arc(x, y, r, 0, 6.2832); k.fill(); }
+function dekSprite(z, kind) {
+  const key = z * 3 + kind;
+  if (dekCache[key]) return dekCache[key];
+  const cv = lavLaerred(140, 240), k = cv.getContext("2d");
+  k.lineCap = "round"; k.lineJoin = "round";
+  if (z === 0) {
+    if (kind === 0) { // slikstok
+      const bane = function () { k.beginPath(); k.moveTo(60, 236); k.lineTo(60, 80); k.arc(88, 80, 28, Math.PI, 0); k.lineTo(116, 100); };
+      k.lineWidth = 20; k.strokeStyle = "#ffffff"; bane(); k.stroke();
+      k.strokeStyle = "#ff3f5f"; k.setLineDash([16, 16]); bane(); k.stroke(); k.setLineDash([]);
+    } else if (kind === 1) { // pudret gran
+      k.fillStyle = "#8a5a3a"; k.fillRect(64, 190, 12, 46);
+      for (let i = 0; i < 3; i++) { const y = 200 - i * 52, w = 62 - i * 14; k.fillStyle = "#dfeaff"; k.beginPath(); k.moveTo(70, y - 70); k.lineTo(70 + w, y); k.lineTo(70 - w, y); k.closePath(); k.fill();
+        k.fillStyle = "#ffffff"; k.beginPath(); k.moveTo(70, y - 70); k.lineTo(70 + w * 0.55, y - 30); k.lineTo(70 - w * 0.2, y - 20); k.closePath(); k.fill(); blob(k, 70 - w * 0.4, y - 10, 5, "#ff6fa8"); blob(k, 70 + w * 0.45, y - 14, 5, "#ffd23f"); }
+    } else { // is-kræmmerhus
+      k.fillStyle = "#e3b06a"; k.beginPath(); k.moveTo(40, 120); k.lineTo(100, 120); k.lineTo(70, 236); k.closePath(); k.fill();
+      k.strokeStyle = "rgba(120,70,20,.4)"; k.lineWidth = 3; for (let i = 0; i < 4; i++) { k.beginPath(); k.moveTo(46 + i * 12, 124); k.lineTo(70, 230); k.stroke(); }
+      blob(k, 70, 108, 38, "#fff1f6"); blob(k, 70, 70, 32, "#ffb3d4"); blob(k, 70, 40, 12, "#e0233f");
+    }
+  } else if (z === 1) {
+    if (kind === 0) { // jordbær
+      k.fillStyle = "#5bbf3a"; k.fillRect(66, 150, 8, 86);
+      k.fillStyle = "#e0233f"; k.beginPath(); k.moveTo(70, 220); k.bezierCurveTo(10, 170, 20, 90, 70, 94); k.bezierCurveTo(120, 90, 130, 170, 70, 220); k.fill();
+      k.fillStyle = "#ffe9a0"; for (let i = 0; i < 12; i++) { k.beginPath(); k.ellipse(40 + tilf(i) * 60, 110 + tilf(i + 9) * 90, 2.6, 4, 0, 0, 6.28); k.fill(); }
+      k.fillStyle = "#5bbf3a"; for (let i = -2; i <= 2; i++) { k.beginPath(); k.ellipse(70 + i * 14, 94, 9, 16, i * 0.5, 0, 6.28); k.fill(); }
+    } else if (kind === 1) { // vingummi-træ
+      k.fillStyle = "#b07a4a"; k.fillRect(64, 130, 12, 106);
+      blob(k, 70, 86, 44, "#58c957"); blob(k, 40, 110, 30, "#6bdc66"); blob(k, 100, 108, 32, "#4cb94c"); blob(k, 70, 56, 30, "#7be877");
+      blob(k, 54, 84, 6, "rgba(255,255,255,.55)");
+    } else { // stor lyserød slikkepind
+      k.fillStyle = "#ffffff"; k.fillRect(66, 110, 8, 126); blob(k, 70, 68, 52, "#ff6fa8");
+      k.strokeStyle = "#fff"; k.lineWidth = 8; k.beginPath(); for (let i = 0; i <= 50; i++) { const a = i / 50 * 11, r = 42 * i / 50; if (i) k.lineTo(70 + Math.cos(a) * r, 68 + Math.sin(a) * r); else k.moveTo(70, 68); } k.stroke();
+    }
+  } else if (z === 2) {
+    if (kind === 0) { // chokoladetræ
+      k.fillStyle = "#5a3118"; k.fillRect(62, 120, 16, 116);
+      blob(k, 70, 80, 46, "#6e3d1c"); blob(k, 38, 100, 28, "#7a4522"); blob(k, 102, 100, 28, "#5a3118");
+      k.fillStyle = "#fff4e0"; for (let i = 0; i < 7; i++) { k.beginPath(); k.arc(36 + tilf(i + 3) * 70, 56 + tilf(i + 8) * 60, 4, 0, 6.28); k.fill(); }
+    } else if (kind === 1) { // chokoladeplader
+      for (let i = 0; i < 3; i++) { k.save(); k.translate(70, 214 - i * 56); k.rotate((i - 1) * 0.12); k.fillStyle = i % 2 ? "#6b3a1e" : "#7e4826"; k.fillRect(-42, -26, 84, 52);
+        k.strokeStyle = "rgba(0,0,0,.28)"; k.lineWidth = 3; for (let c = -1; c <= 1; c++) { k.beginPath(); k.moveTo(c * 28 + 14, -26); k.lineTo(c * 28 + 14, 26); k.stroke(); } k.beginPath(); k.moveTo(-42, 0); k.lineTo(42, 0); k.stroke(); k.restore(); }
+    } else { // skumfidus-søjle
+      k.fillStyle = "#ffd6e6"; k.fillRect(44, 100, 52, 136); k.fillStyle = "#ffffff"; k.beginPath(); k.ellipse(70, 236, 26, 8, 0, 0, 6.28); k.fill();
+      k.fillStyle = "#fff1f7"; k.beginPath(); k.ellipse(70, 100, 26, 10, 0, 0, 6.28); k.fill(); k.fillStyle = "rgba(255,120,170,.4)"; k.fillRect(44, 150, 52, 14);
+    }
+  } else {
+    if (kind === 0) { // krystal
+      const kr = [[70, 20, 100, 150, 70, 236, 40, 150, "#7be7ff"], [34, 90, 56, 160, 30, 236, 12, 160, "#b48aff"], [108, 100, 126, 170, 106, 236, 88, 170, "#ff7be5"]];
+      for (let i = 0; i < kr.length; i++) { const q = kr[i]; k.fillStyle = q[8]; k.beginPath(); k.moveTo(q[0], q[1]); k.lineTo(q[2], q[3]); k.lineTo(q[4], q[5]); k.lineTo(q[6], q[7]); k.closePath(); k.fill();
+        k.fillStyle = "rgba(255,255,255,.45)"; k.beginPath(); k.moveTo(q[0], q[1]); k.lineTo(q[2], q[3]); k.lineTo(q[4], q[5]); k.closePath(); k.fill(); }
+    } else if (kind === 1) { // stjernelygte
+      k.fillStyle = "#d9d2ff"; k.fillRect(66, 110, 8, 126);
+      const rg = k.createRadialGradient(70, 70, 4, 70, 70, 64); rg.addColorStop(0, "rgba(255,240,160,.9)"); rg.addColorStop(1, "rgba(255,240,160,0)"); k.fillStyle = rg; k.fillRect(0, 0, 140, 140);
+      k.fillStyle = "#ffe97a"; k.beginPath(); for (let i = 0; i < 10; i++) { const a = -1.5708 + i * 0.6283, r = i % 2 ? 16 : 38; k.lineTo(70 + Math.cos(a) * r, 70 + Math.sin(a) * r); } k.closePath(); k.fill();
+    } else { // måne-slik
+      k.fillStyle = "#d9d2ff"; k.fillRect(66, 120, 8, 116);
+      const rg = k.createRadialGradient(70, 70, 4, 70, 70, 60); rg.addColorStop(0, "rgba(180,200,255,.8)"); rg.addColorStop(1, "rgba(180,200,255,0)"); k.fillStyle = rg; k.fillRect(0, 0, 140, 140);
+      k.fillStyle = "#f2f0ff"; k.beginPath(); k.arc(70, 70, 34, 0, 6.2832); k.fill(); k.globalCompositeOperation = "destination-out"; k.beginPath(); k.arc(86, 62, 30, 0, 6.2832); k.fill();
+    }
+  }
+  return (dekCache[key] = cv);
+}
+
+/* =====================================================================
+   TEGNING AF VERDENEN
+   ===================================================================== */
+const canvas = el("spil");
+const c = canvas.getContext("2d");
+let W = 800, H = 600, dpr = 1, U = 400, KY = 1, hy = 240;
+
+function tilpas() {
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = Math.max(200, window.innerWidth || 800);
+  H = Math.max(200, window.innerHeight || 600);
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  U = Math.min(W / 2 * 0.72, H * 0.5);
+  KY = klem(H / (W * 0.72), 1, 2.9);
+  hy = H * 0.37;
+}
+
+/* ---------- Spillets tilstand (deles af tegning og logik) ---------- */
+let tilstand = "menu";   // menu, garage, nedtaelling, koerer, slutter, slut
+let donut = DONUTS[0];
+let zp = START_Z, samlet = 0, bidder = 1, maksBidder = 1;
+let playerX = 0, spillerVX = 0, hopTid = 0, hopVarighed = HOP_TID, hopMax = HOP_HOEJDE, hopStartH = 0, blink = 0, rot = 0;
+let camX = 0, camY = 3, bgShift = 0, shake = 0, landSq = 0, popT = 0, speedMul = 1, fartNu = START_FART, lean = 0;
+let partikler = [], tekster = [], spor = [], zoneBanner = null;
+let nedTid = 0, slutTid = 0, slutAarsag = "", nyRekord = false, tid = 0, forhaandId = "almindelig", spilSkala = { x: W / 2, y: H * 0.7, r: 40 };
+
+function kmNu() { return Math.max(0, zp - START_Z); }
+function grundY(z) {
+  const s = seg(Math.floor(z / SEG)), s2 = seg(Math.floor(z / SEG) + 1);
+  if (!s || !s2) return 0;
+  const t = z / SEG - s.i;
+  let y = lerp(s.y, s2.y, t);
+  if (s.ramp) y += lerp(RAMPE_H * (s.ramp - 1) / RAMPE_SEGS, RAMPE_H * s.ramp / RAMPE_SEGS, t);
+  return y;
+}
+function hopH() {
+  if (hopTid <= 0) return 0;
+  const u = 1 - hopTid / hopVarighed;
+  return hopMax * Math.sin(Math.PI * u) + hopStartH * (1 - u);
+}
+
+function quad(x1, y1, x2, y2, x3, y3, x4, y4, col) {
+  c.fillStyle = col; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.lineTo(x3, y3); c.lineTo(x4, y4); c.closePath(); c.fill();
+}
+
+const PL = { x: 0, y: 0, sc: 1 };
+let camZ = 0;
+function place(s, t, lat, minZ) {
+  const z = (s.i + t) * SEG - camZ;
+  if (z < (minZ || 0.5)) return false;
+  const s2 = seg(s.i + 1) || s, sc = U * FOV_D / z;
+  PL.x = W / 2 + (lerp(s.cx1, s.cx2, t) + lat - camX) * sc;
+  PL.y = hy - (lerp(s.y, s2.y, t) - camY) * sc * KY;
+  PL.sc = sc;
+  return true;
+}
+
+function palNu() {
+  const zi = Math.floor(zp / ZONE_LAENGDE), r = zp - zi * ZONE_LAENGDE;
+  return blendPal(Math.max(0, zi - 1), zi, zi === 0 ? 1 : smooth(r / 90));
+}
+
+function tegnHimmel(P) {
+  let g = c.createLinearGradient(0, 0, 0, hy);
+  g.addColorStop(0, P.skyTop); g.addColorStop(1, P.skyBot);
+  c.fillStyle = g; c.fillRect(-20, -20, W + 40, hy + 22);
+  c.fillStyle = P.jord1; c.fillRect(-20, hy, W + 40, H - hy + 20);
+  if (P.star > 0.02) {
+    for (let i = 0; i < 80; i++) {
+      const al = P.star * (0.35 + 0.65 * Math.sin(tid * 2 + i * 1.7) * 0.5 + 0.325);
+      c.fillStyle = "rgba(255,255,255," + al + ")";
+      const sz = 1 + tilf(i + 4) * 1.8;
+      c.fillRect(((tilf(i) * W * 1.4 - bgShift * 0.02) % W + W) % W, tilf(i + 99) * hy * 0.86, sz, sz);
+    }
+  }
+  const sx = W * 0.68 - (bgShift * 0.04) % (W * 1.2), sy = hy * 0.5, sr = Math.min(W, H) * 0.09;
+  g = c.createRadialGradient(sx, sy, sr * 0.3, sx, sy, sr * 3);
+  g.addColorStop(0, P.sol); g.addColorStop(0.3, P.sol); g.addColorStop(1, "rgba(255,255,255,0)");
+  c.globalAlpha = 0.9; c.fillStyle = g; c.fillRect(sx - sr * 3, sy - sr * 3, sr * 6, sr * 6); c.globalAlpha = 1;
+  c.fillStyle = P.sol; c.beginPath(); c.arc(sx, sy, sr, 0, 6.2832); c.fill();
+  // candyfloss-skyer
+  c.globalAlpha = 1 - P.star * 0.78;
+  for (let i = 0; i < 7; i++) {
+    const sp = skySprite(i), sk = 0.5 + tilf(i + 11) * 0.7, wrap = W + 420;
+    const x = (((tilf(i) * wrap - bgShift * (0.06 + 0.03 * (i % 3)) - tid * (4 + i)) % wrap) + wrap) % wrap - 260;
+    c.drawImage(sp, x, hy * (0.1 + 0.42 * tilf(i + 5)), 280 * sk * (U / 420), 120 * sk * (U / 420));
+  }
+  c.globalAlpha = 1;
+  bjerge(P, 3, 0.18, P.bjerg1, 0.55, 90);
+  bjerge(P, 9, 0.35, P.bjerg2, 0.34, 60);
+  g = c.createLinearGradient(0, hy - 40, 0, hy + 6);
+  g.addColorStop(0, "rgba(255,255,255,0)"); g.addColorStop(1, P.skyBot);
+  c.globalAlpha = 0.7; c.fillStyle = g; c.fillRect(0, hy - 40, W, 46); c.globalAlpha = 1;
+}
+
+function bjerge(P, lag, f, farve, hFak, step) {
+  const off = bgShift * f, i0 = Math.floor(off / step) - 1, n = Math.ceil(W / step) + 3, hh = hy * hFak * 1.5;
+  c.beginPath(); c.moveTo(-100, hy + 2);
+  for (let i = 0; i < n; i++) {
+    const idx = i0 + i, h = (tilf(idx * 1.37 + lag) * 0.65 + 0.35) * hh, h2 = (tilf(idx * 2.11 + lag + 5) * 0.4 + 0.2) * hh;
+    c.lineTo(idx * step - off, hy - h); c.lineTo((idx + 0.5) * step - off, hy - h2);
+  }
+  c.lineTo(W + 200, hy + 2); c.closePath();
+  const g = c.createLinearGradient(0, hy - hh, 0, hy);
+  g.addColorStop(0, "#ffffff"); g.addColorStop(0.28, lys(farve, 0.45)); g.addColorStop(1, farve);
+  c.fillStyle = g; c.fill();
+}
+
+function tegnVerden(P) {
+  camZ = zp - KAMERA_BAGUD;
+  const baseI = Math.floor(camZ / SEG), bPct = camZ / SEG - baseI;
+  const bs = seg(baseI); if (!bs) return;
+  const ps = Math.floor(zp / SEG);
+  let x = 0, dx = -(bs.curve * bPct), maxy = H + 60;
+  const N = Math.min(SEG_SYN, segs.length - (baseI - segBase) - 1);
+  for (let n = 0; n < N; n++) {
+    const s = seg(baseI + n), s2 = seg(baseI + n + 1);
+    const z1 = Math.max(0.25, s.i * SEG - camZ), z2 = (s.i + 1) * SEG - camZ;
+    s.cx1 = x; x += dx; s.cx2 = x; dx += s.curve;
+    s.vis = false; s.clip = maxy;
+    if (z2 <= 0.25) { s.skjul = true; continue; }
+    s.skjul = false;
+    const sc1 = U * FOV_D / z1, sc2 = U * FOV_D / z2;
+    const y1 = hy - (s.y - camY) * sc1 * KY, y2 = hy - (s2.y - camY) * sc2 * KY;
+    if (y2 >= y1 - 0.01 || y2 >= maxy) continue;
+    s.vis = true;
+    const x1 = W / 2 + (s.cx1 - camX) * sc1, x2 = W / 2 + (s.cx2 - camX) * sc2;
+    const h1 = BANE_HALV * s.w, h2 = BANE_HALV * s2.w, Z = ZONER[s.zone];
+    c.fillStyle = s.alt ? Z.jord2 : Z.jord1; c.fillRect(0, y2, W, y1 - y2 + 1.5);
+    const L1 = x1 - sc1 * h1, R1 = x1 + sc1 * h1, L2 = x2 - sc2 * h2, R2 = x2 + sc2 * h2;
+    let vej = s.alt ? Z.vej2 : Z.vej1;
+    if (s.flod) vej = Math.sin(tid * 3 + s.i * 0.8) > 0 ? "#6a3716" : "#5b2e12";
+    else if (s.sticky) vej = s.alt ? "#d79436" : "#cf8a2c";
+    quad(L1, y1 + 0.8, R1, y1 + 0.8, R2, y2, L2, y2, vej);
+    const k1 = s.alt ? Z.kant1 : Z.kant2, rb1 = sc1 * 0.95, rb2 = sc2 * 0.95;
+    quad(L1 - rb1, y1 + 0.8, L1, y1 + 0.8, L2, y2, L2 - rb2, y2, k1);
+    quad(R1, y1 + 0.8, R1 + rb1, y1 + 0.8, R2 + rb2, y2, R2, y2, k1);
+    if (!s.flod && !s.sticky) {
+      if (!s.alt) for (let sd = -1; sd <= 1; sd += 2) {
+        const a = sd * h1 * 0.5, b = sd * h2 * 0.5, w1 = sc1 * 0.07, w2 = sc2 * 0.07;
+        quad(x1 + a * sc1 - w1, y1, x1 + a * sc1 + w1, y1, x2 + b * sc2 + w2, y2, x2 + b * sc2 - w2, y2, Z.streg);
+      }
+      if (n < 55 && tilf(s.i * 3.1) > 0.78) {
+        const lat = (tilf(s.i * 5.7) * 2 - 1) * h1 * 0.9, sxp = x1 + lat * sc1, sz = Math.max(1, sc1 * 0.05), al = 0.4 + 0.6 * Math.abs(Math.sin(tid * 4 + s.i));
+        c.fillStyle = "rgba(255,255,255," + al + ")"; c.fillRect(sxp - sz * 2, y1 - sz * 0.5, sz * 4, sz); c.fillRect(sxp - sz * 0.5, y1 - sz * 2, sz, sz * 4);
+      }
+    }
+    if (s.flod) { c.fillStyle = "rgba(255,200,150,.22)"; c.fillRect(L1, y1 - 2, R1 - L1, 2.5); quad(L1 + (R1 - L1) * 0.1, y1, L1 + (R1 - L1) * 0.35, y1, L2 + (R2 - L2) * 0.3, y2, L2 + (R2 - L2) * 0.12, y2, "rgba(255,210,170,.14)"); }
+    if (s.sticky) { quad(L1 + (R1 - L1) * 0.15, y1, L1 + (R1 - L1) * 0.3, y1, L2 + (R2 - L2) * 0.3, y2, L2 + (R2 - L2) * 0.15, y2, "rgba(255,230,150,.35)"); }
+    if (s.boost) {
+      const f = ((Math.floor(tid * 9) + s.i) % 2) ? "#ffe14d" : "#ffa800";
+      quad(x1 - sc1 * h1 * 0.7, y1, x1 + sc1 * h1 * 0.7, y1, x2 + sc2 * h2 * 0.7, y2, x2 - sc2 * h2 * 0.7, y2, f);
+      quad(x1 - sc1 * 0.8, y1, x1 + sc1 * 0.8, y1, x2 + sc2 * 0.8, y2, x2 - sc2 * 0.8, y2, "rgba(255,255,255,.7)");
+    }
+    if (s.ramp) {
+      const hA = RAMPE_H * (s.ramp - 1) / RAMPE_SEGS, hB = RAMPE_H * s.ramp / RAMPE_SEGS;
+      const t1 = y1 - hA * sc1 * KY, t2 = y2 - hB * sc2 * KY;
+      quad(L1, y1, L1, t1, L2, t2, L2, y2, "#a85a1a"); quad(R1, y1, R1, t1, R2, t2, R2, y2, "#8e4a14");
+      quad(L1, t1, R1, t1, R2, t2, L2, t2, (s.i % 2) ? "#ffd23f" : "#ff8a1f");
+      quad(L1, t1, L1 + (R1 - L1) * 0.06, t1, L2 + (R2 - L2) * 0.06, t2, L2, t2, "rgba(255,255,255,.6)");
+      quad(R1 - (R1 - L1) * 0.06, t1, R1, t1, R2, t2, R2 - (R2 - L2) * 0.06, t2, "rgba(255,255,255,.6)");
+    }
+    maxy = y2;
+  }
+
+  // Alt på banen tegnes fra det fjerneste mod det nærmeste
+  const pn = ps - baseI;
+  for (let n = N - 1; n >= 0; n--) {
+    const s = seg(baseI + n);
+    if (s.skjul && n !== pn) continue;
+    const harIndhold = s.dek.length || s.ting.length || s.bue || s.flod || n === pn;
+    if (!harIndhold) continue;
+    const kl = s.clip < H - 1;
+    if (kl) { c.save(); c.beginPath(); c.rect(-50, -50, W + 100, s.clip + 50 + 0.05 * H); c.clip(); }
+    tegnSegIndhold(s, n);
+    if (kl) c.restore();
+    if (n === pn) tegnSpiller(s, ps);
+  }
+}
+
+function tegnSegIndhold(s, n) {
+  const half = BANE_HALV * s.w;
+  for (let i = 0; i < s.dek.length; i++) {
+    const d = s.dek[i];
+    if (!place(s, 0, d.side * (half + 1.2 + d.off))) continue;
+    const spr = dekSprite(s.zone, d.kind), w = 2.9 * d.sc * PL.sc, h = 5 * d.sc * PL.sc * KY;
+    c.drawImage(spr, PL.x - w / 2, PL.y - h * 0.983, w, h);
+  }
+  if (s.bue && place(s, 0, 0, 9)) {
+    const sc = PL.sc, cy = PL.y, cx0 = PL.x;
+    place(s, 0, -(half + 1.1)); const lx = PL.x; place(s, 0, half + 1.1); const rx = PL.x;
+    const ph = 6.2 * sc * KY, pw = 0.9 * sc;
+    for (let sd = 0; sd < 2; sd++) {
+      const px = sd ? rx : lx;
+      for (let i = 0; i < 8; i++) { c.fillStyle = i % 2 ? "#ffffff" : "#ff3f8a"; c.fillRect(px - pw / 2, cy - ph * (i + 1) / 8, pw, ph / 8 + 1); }
+    }
+    const bh = 1.7 * sc * KY, g = c.createLinearGradient(0, cy - ph - bh * 0.4, 0, cy - ph + bh);
+    g.addColorStop(0, "#ff7cb4"); g.addColorStop(1, "#e82a78");
+    c.fillStyle = g; c.fillRect(lx - pw, cy - ph - bh * 0.4, rx - lx + pw * 2, bh);
+    c.strokeStyle = "#ffffff"; c.lineWidth = Math.max(1, sc * 0.1); c.strokeRect(lx - pw, cy - ph - bh * 0.4, rx - lx + pw * 2, bh);
+    c.fillStyle = "#ffffff"; c.textAlign = "center"; c.textBaseline = "middle"; c.font = "bold " + Math.max(6, Math.round(sc * 0.95 * Math.min(1, KY * 0.6 + 0.4))) + "px " + FONT;
+    c.fillText(ZONER[s.zone].navn, (lx + rx) / 2, cy - ph + bh * 0.1);
+  }
+  if (s.flod && n < 75) {
+    for (let b = 0; b < 3; b++) {
+      const ph = (tid * 0.7 + tilf(s.i + b * 7)) % 1, lat = (tilf(s.i * 3 + b) * 2 - 1) * (half - 1);
+      if (!place(s, 0.5, lat)) continue;
+      const r = (0.1 + 0.3 * Math.sin(ph * 3.1416)) * PL.sc;
+      c.fillStyle = "#86502a"; c.beginPath(); c.ellipse(PL.x, PL.y - r * 0.3, r, r * 0.8, 0, 0, 6.2832); c.fill();
+      c.fillStyle = "rgba(255,230,200,.7)"; c.beginPath(); c.arc(PL.x - r * 0.35, PL.y - r * 0.6, r * 0.22, 0, 6.2832); c.fill();
+    }
+  }
+  for (let i = 0; i < s.ting.length; i++) {
+    const t = s.ting[i];
+    const tt = t.pos / SEG - s.i;
+    if (t.tp === "slik") {
+      if (!place(s, tt, t.x, 2.2)) continue;
+      const sc = PL.sc, scl = 1.5 * sc / 104, spr = lolSprite(t.farve);
+      c.fillStyle = "rgba(40,10,40,.22)"; c.beginPath(); c.ellipse(PL.x, PL.y, sc * 0.75, sc * 0.26, 0, 0, 6.2832); c.fill();
+      c.drawImage(spr, PL.x - 60 * scl, PL.y - 208 * scl * Math.max(1, KY * 0.9), 120 * scl, 214 * scl * Math.max(1, KY * 0.9));
+    } else if (t.tp === "lakrids") {
+      if (!place(s, tt, t.x1, 2.2)) continue;
+      const ax = PL.x, ay = PL.y, sc = PL.sc; place(s, tt, t.x2); const bx2 = PL.x, by2 = PL.y;
+      const hh = 0.8 * sc * KY, top = 0.28 * hh;
+      c.fillStyle = "rgba(40,10,40,.25)"; c.fillRect(ax - sc * 0.1, ay - hh * 0.05, bx2 - ax + sc * 0.2, hh * 0.2);
+      let g = c.createLinearGradient(0, ay - hh, 0, ay); g.addColorStop(0, "#4a4a58"); g.addColorStop(0.25, "#2b2b36"); g.addColorStop(1, "#0b0b10");
+      c.fillStyle = g; c.beginPath(); const rr = hh * 0.3;
+      c.moveTo(ax + rr, ay - hh); c.lineTo(bx2 - rr, by2 - hh); c.quadraticCurveTo(bx2 + rr * 0.6, by2 - hh, bx2 + rr * 0.6, by2 - hh * 0.5);
+      c.quadraticCurveTo(bx2 + rr * 0.6, by2, bx2 - rr, by2); c.lineTo(ax + rr, ay); c.quadraticCurveTo(ax - rr * 0.6, ay, ax - rr * 0.6, ay - hh * 0.5); c.quadraticCurveTo(ax - rr * 0.6, ay - hh, ax + rr, ay - hh); c.fill();
+      c.fillStyle = "rgba(255,255,255,.22)"; c.fillRect(ax + rr, ay - hh + top * 0.3, bx2 - ax - 2 * rr, top * 0.45);
+      c.strokeStyle = "rgba(255,120,170,.75)"; c.lineWidth = Math.max(1.5, hh * 0.1);
+      const cnt = Math.max(2, Math.floor((bx2 - ax) / (hh * 1.1)));
+      for (let q = 0; q < cnt; q++) { const px = ax + (bx2 - ax) * (q + 0.5) / cnt; c.beginPath(); c.moveTo(px - hh * 0.2, ay - hh * 0.9); c.lineTo(px + hh * 0.2, ay - hh * 0.1); c.stroke(); }
+    } else if (t.tp === "donut" && !t.vaek) {
+      if (!place(s, tt, t.x, 2.2)) continue;
+      const sc = PL.sc, r = 0.45 * sc, lift = t.h * sc * KY;
+      c.fillStyle = "rgba(40,10,40," + (0.2 - Math.min(0.12, t.h * 0.04)) + ")"; c.beginPath(); c.ellipse(PL.x, PL.y, r * 0.8, r * 0.28, 0, 0, 6.2832); c.fill();
+      const spin = tid * 3 + t.fase, wsc = 0.32 + 0.68 * Math.abs(Math.cos(spin)), spr = donutSprite(MOENT_D, 1), sz = 300 * r / 100 * 0.95;
+      const cy2 = PL.y - lift - r * 0.9 + Math.sin(tid * 4 + t.fase) * r * 0.1;
+      c.drawImage(spr, PL.x - sz * wsc / 2, cy2 - sz / 2, sz * wsc, sz);
+      if (Math.abs(Math.cos(spin)) > 0.9) { c.fillStyle = "rgba(255,255,255,.8)"; c.fillRect(PL.x - r * 0.1, cy2 - r * 0.9, r * 0.2, r * 0.2); }
+    }
+  }
+}
+
+function tegnSpiller(s, ps) {
+  if (tilstand === "slutter" && slutAarsag === "krummer") return;
+  if (tilstand === "slut") return;
+  const z = KAMERA_BAGUD, sc = U * FOV_D / z, t = zp / SEG - s.i, s2 = seg(s.i + 1) || s;
+  const cx = lerp(s.cx1, s.cx2, t), yG = grundY(zp), hh = hopH();
+  const px = W / 2 + (cx + playerX - camX) * sc, pyG = hy - (yG - camY) * sc * KY;
+  let skala = 1, sink = 0;
+  if (tilstand === "slutter" && slutAarsag === "flod") { skala = Math.max(0, 1 - slutTid * 1.5); sink = slutTid * sc * 0.5; }
+  const r = SPILLER_R * sc * skala;
+  if (r < 1) return;
+  const hf = hh / Math.max(0.1, hopMax), yHop = hh * sc * KY;
+  spilSkala.x = px; spilSkala.y = pyG; spilSkala.r = r;
+  // spor og støv bag donutten
+  if (donut.evne === "regnbue" && spor.length > 1) tegnSpor(s);
+  tegnPartikler(true);
+  // skygge
+  c.fillStyle = "rgba(40,10,40," + (0.3 - 0.14 * Math.min(1, hf)) + ")";
+  c.beginPath(); c.ellipse(px, pyG + r * 0.1, r * (1.0 - 0.2 * hf), r * 0.36 * Math.max(1, KY * 0.55), 0, 0, 6.2832); c.fill();
+  const blinker = blink > 0 && Math.floor(blink * 10) % 2 === 0;
+  c.globalAlpha = blinker ? 0.3 : 1;
+  const sx = 1 + 0.2 * landSq - 0.06 * hf, sy = 1 - 0.24 * landSq + 0.1 * hf;
+  tegnDonut3D(c, px, pyG - yHop - r * 0.5 * (1 - 0) + sink, r, donut, bidder, rot, { flat: 0.84, lean: lean, sx: sx, sy: sy, tid: tid, tykkelse: r * 0.2 });
+  c.globalAlpha = 1;
+}
+
+function tegnSpor(sP) {
+  c.lineCap = "round"; c.lineJoin = "round";
+  for (let f = 0; f < REGNBUE.length; f++) {
+    c.strokeStyle = REGNBUE[f]; c.globalAlpha = 0.9;
+    let started = false; c.beginPath();
+    for (let i = 0; i < spor.length; i++) {
+      const q = spor[i], z = q.pos - camZ; if (z < 0.6) continue;
+      const si = seg(Math.floor(q.pos / SEG)); if (!si || si.cx1 === undefined) continue;
+      const tt = q.pos / SEG - si.i, sc = U * FOV_D / z;
+      const cx = lerp(si.cx1, si.cx2, tt), yg = lerp(si.y, (seg(si.i + 1) || si).y, tt);
+      const xx = W / 2 + (cx + q.x + (f - 2.5) * 0.17 - camX) * sc, yy = hy - (yg + 0.05 - camY) * sc * KY;
+      if (!started) { c.moveTo(xx, yy); started = true; } else c.lineTo(xx, yy);
+    }
+    c.lineWidth = Math.max(2, 0.19 * U * FOV_D / KAMERA_BAGUD * 0.8); c.stroke();
+  }
+  c.globalAlpha = 1; c.lineCap = "butt"; c.lineJoin = "miter";
+}
+
+function tegnFartstreger() {
+  const f = klem((fartNu - 14) / 14, 0, 1);
+  if (f <= 0.02) return;
+  const cx = W / 2, cy = hy + (H - hy) * 0.1;
+  c.strokeStyle = "rgba(255,255,255," + (0.5 * f) + ")"; c.lineWidth = 2; c.beginPath();
+  for (let i = 0; i < 18; i++) {
+    const a = tilf(i * 3.3 + Math.floor(tid * 7) * 0.37) * 6.2832, d0 = Math.max(W, H) * (0.45 + 0.1 * tilf(i + 1)), d1 = d0 + Math.max(W, H) * (0.12 + 0.2 * f);
+    c.moveTo(cx + Math.cos(a) * d0, cy + Math.sin(a) * d0 * 0.7); c.lineTo(cx + Math.cos(a) * d1, cy + Math.sin(a) * d1 * 0.7);
+  }
+  c.stroke();
+}
+
+function tegnPartikler(bag) {
+  for (let i = 0; i < partikler.length; i++) {
+    const p = partikler[i], a = klem(p.liv / p.max, 0, 1);
+    if (!!p.bag !== !!bag) continue;
+    c.globalAlpha = Math.min(1, a * 1.6); c.fillStyle = p.farve;
+    if (p.form === 1) { c.fillRect(p.x - p.str, p.y - p.str * 0.5, p.str * 2, p.str); }
+    else if (p.form === 2) { c.beginPath(); c.moveTo(p.x, p.y - p.str * 1.6); c.lineTo(p.x + p.str * 0.5, p.y); c.lineTo(p.x, p.y + p.str * 1.6); c.lineTo(p.x - p.str * 0.5, p.y); c.fill(); c.fillRect(p.x - p.str * 1.6, p.y - p.str * 0.25, p.str * 3.2, p.str * 0.5); }
+    else { c.beginPath(); c.arc(p.x, p.y, p.str * (p.krymp ? a : 1), 0, 6.2832); c.fill(); }
+  }
+  c.globalAlpha = 1;
+  if (bag) return;
+  c.textAlign = "center"; c.textBaseline = "middle";
+  for (let i = 0; i < tekster.length; i++) {
+    const t = tekster[i], a = klem(t.liv / 0.9, 0, 1), sz = 22 + 10 * (1 - a);
+    c.globalAlpha = Math.min(1, a * 2); c.font = "bold " + Math.round(sz) + "px " + FONT; c.lineWidth = 5; c.strokeStyle = "#a8195a"; c.lineJoin = "round";
+    c.strokeText(t.txt, t.x, t.y); c.fillStyle = t.farve || "#fff4a8"; c.fillText(t.txt, t.x, t.y);
+  }
+  c.globalAlpha = 1;
+}
+
+function pille(x, y, w, h, r) {
+  c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+}
+
+function tegnHud() {
+  const b = Math.min(W - 16, 500), x0 = (W - b) / 2, y0 = 10, h = 60;
+  c.save();
+  pille(x0, y0 + 4, b, h, 18); c.fillStyle = "rgba(120,10,70,.35)"; c.fill();
+  pille(x0, y0, b, h, 18);
+  const g = c.createLinearGradient(0, y0, 0, y0 + h); g.addColorStop(0, "#ffffff"); g.addColorStop(1, "#ffe2f0"); c.fillStyle = g; c.fill();
+  c.strokeStyle = "#ff8cc0"; c.lineWidth = 3; c.stroke();
+  const kol = b / 3; c.textBaseline = "middle"; c.textAlign = "center";
+  const navne = ["METER", "DONUTS", "BIDDER"];
+  c.font = "bold 11px " + FONT; c.fillStyle = "#c2578f";
+  for (let i = 0; i < 3; i++) c.fillText(navne[i], x0 + kol * (i + 0.5), y0 + 15);
+  c.fillStyle = "#5a2a45"; c.font = "bold 24px " + FONT;
+  c.fillText(tal(kmNu()) + " m", x0 + kol * 0.5, y0 + 40);
+  const pop = 1 + 0.35 * Math.max(0, popT);
+  c.drawImage(donutSprite(MOENT_D, 1), x0 + kol * 1.5 - 44, y0 + 40 - 16, 32, 32);
+  c.save(); c.translate(x0 + kol * 1.5 - 4, y0 + 40); c.scale(pop, pop); c.textAlign = "left"; c.fillStyle = "#e0407f"; c.fillText(tal(samlet), 0, 0); c.restore();
+  const bs = donutSprite(donut, bidder);
+  c.drawImage(bs, x0 + kol * 2.5 - 52, y0 + 40 - 17, 34, 34);
+  c.textAlign = "left"; c.fillStyle = "#5a2a45"; c.fillText(bidder + " / " + maksBidder, x0 + kol * 2.5 - 14, y0 + 40);
+  c.restore();
+}
+
+function tegnZoneBanner() {
+  if (!zoneBanner) return;
+  const t = zoneBanner.t, a = t > 2.2 ? (2.6 - t) / 0.4 : Math.min(1, t / 0.4);
+  const sz = Math.min(W * 0.1, 56), y = H * 0.24 + (1 - smooth(a)) * -20;
+  c.save(); c.globalAlpha = klem(a, 0, 1); c.textAlign = "center"; c.textBaseline = "middle";
+  c.font = "bold " + Math.round(sz) + "px " + FONT; c.lineJoin = "round"; c.lineWidth = sz * 0.18; c.strokeStyle = "#a8195a";
+  c.strokeText(zoneBanner.txt, W / 2, y); c.fillStyle = "#ffffff"; c.fillText(zoneBanner.txt, W / 2, y);
+  c.font = "bold " + Math.round(sz * 0.36) + "px " + FONT; c.lineWidth = sz * 0.1;
+  c.strokeText("Ny verden!", W / 2, y - sz * 0.72); c.fillStyle = "#ffe14d"; c.fillText("Ny verden!", W / 2, y - sz * 0.72);
+  c.restore();
+}
+
+function tegnNedtaelling() {
+  let tekst = null, fase = 0;
+  if (nedTid < 0.8) { tekst = "3"; fase = nedTid / 0.8; }
+  else if (nedTid < 1.6) { tekst = "2"; fase = (nedTid - 0.8) / 0.8; }
+  else if (nedTid < 2.4) { tekst = "1"; fase = (nedTid - 1.6) / 0.8; }
+  else if (nedTid < 3.2) { tekst = "Kør!"; fase = (nedTid - 2.4) / 0.8; }
+  if (!tekst) return;
+  const str = Math.min(W * 0.3, H * 0.22, 150) * (1.35 - 0.35 * Math.min(1, fase * 3));
+  c.font = "bold " + Math.round(str) + "px " + FONT; c.textAlign = "center"; c.textBaseline = "middle";
+  c.globalAlpha = 1 - Math.max(0, fase - 0.7) / 0.3; c.lineJoin = "round";
+  c.strokeStyle = "#a8195a"; c.lineWidth = str * 0.2; c.strokeText(tekst, W / 2, H * 0.34);
+  c.strokeStyle = "#ffffff"; c.lineWidth = str * 0.1; c.strokeText(tekst, W / 2, H * 0.34);
+  c.fillStyle = "#ff3f8a"; c.fillText(tekst, W / 2, H * 0.34);
+  c.globalAlpha = 1; c.lineJoin = "miter";
+}
+
+function tegn() {
+  c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (shake > 0.01) c.translate((Math.random() - 0.5) * shake * 16, (Math.random() - 0.5) * shake * 16);
+  const P = palNu();
+  tegnHimmel(P);
+  tegnVerden(P);
+  const koerer = tilstand === "nedtaelling" || tilstand === "koerer" || tilstand === "slutter";
+  if (tilstand === "koerer") tegnFartstreger();
+  tegnPartikler();
+  if (koerer) tegnHud();
+  if (tilstand === "koerer") tegnZoneBanner();
+  if (tilstand === "nedtaelling" || tilstand === "koerer") tegnNedtaelling();
+  if (tilstand === "garage") tegnForhaand();
+}
+
+function tegnForhaand() {
+  const cv = el("forhaand"), k = cv.getContext("2d"), d = findDonut(forhaandId);
+  k.setTransform(1, 0, 0, 1, 0, 0); k.clearRect(0, 0, 300, 300);
+  const bob = Math.sin(tid * 2) * 4;
+  k.fillStyle = "rgba(90,20,60,.2)"; k.beginPath(); k.ellipse(150, 250, 90 - bob, 20, 0, 0, 6.2832); k.fill();
+  tegnDonut3D(k, 150, 140 + bob, 98, d, d.bidder, tid * 0.9, { flat: 0.8, tid: tid, tykkelse: 20, lean: Math.sin(tid) * 0.05 });
+}
+
+/* =====================================================================
+   LOGIK, STYRING OG MENUER
+   ===================================================================== */
+let hopTidNormal = HOP_TID, hopHoejdeNormal = HOP_HOEJDE, sidsteZone = 0, stoevTimer = 0, slutAnim = 9, slutVaerdier = { m: 0, d: 0, i: 0 };
+const taster = { venstre: false, hoejre: false };
+const pegere = new Map();
+
+function aktuelFart() { return fartVed(kmNu()) * (donut.evne === "langsom" ? 0.9 : 1) * speedMul; }
+
+function nulstilScene(tom) {
+  donut = findDonut(gemt.valgt);
+  maksBidder = bidder = donut.bidder;
+  zp = START_Z; samlet = 0; playerX = 0; spillerVX = 0; hopTid = 0; blink = 0; hopStartH = 0; speedMul = 1; landSq = 0; lean = 0;
+  partikler = []; tekster = []; spor = []; zoneBanner = null; bgShift = 0; shake = 0; sidsteZone = 0; fartNu = START_FART;
+  const lang = donut.evne === "superhop" ? 1.7 : (donut.evne === "hop" ? 1.25 : 1);
+  hopTidNormal = HOP_TID * lang; hopHoejdeNormal = HOP_HOEJDE * Math.pow(lang, 0.8);
+  hopVarighed = hopTidNormal; hopMax = hopHoejdeNormal;
+  startBane(tom);
+  byggTil(zp + SEG_SYN * SEG + 60);
+  camX = 0; camY = grundY(zp) + KAMERA_HOEJDE;
+}
+
+function startLoeb() {
+  nulstilScene(false);
+  nedTid = 0;
+  tilstand = "nedtaelling";
+  visSkaerm(null);
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+}
+
+function tilMenu() {
+  nulstilScene(true);
+  tilstand = "menu";
+  el("startRekord").textContent = "Rekord: " + tal(gemt.rekord) + " m";
+  el("startDonuts").textContent = "Donuts: " + tal(gemt.donuts);
+  visSkaerm("start");
+}
+
+function visSkaerm(navn) {
+  ["start", "slut", "garage"].forEach(function (id) { el(id).className = "skaerm" + (id === navn ? " vis" : ""); });
+}
+
+/* ---------- Styring ---------- */
+function styreRetning() {
+  let r = (taster.venstre ? -1 : 0) + (taster.hoejre ? 1 : 0);
+  let sidste = null;
+  pegere.forEach(function (p) { if (!p.swipe) sidste = p; });
+  if (sidste) r += (sidste.x < W / 2 ? -1 : 1);
+  return klem(r, -1, 1);
+}
+function hop() {
+  if (tilstand === "koerer" && hopTid <= 0) {
+    hopVarighed = hopTidNormal; hopMax = hopHoejdeNormal; hopStartH = 0; hopTid = hopVarighed;
+    stoevSky(10);
+  }
+}
+window.addEventListener("keydown", function (e) {
+  const k = e.key, iSpil = (tilstand === "koerer" || tilstand === "nedtaelling" || tilstand === "slutter");
+  if (k === "ArrowLeft" || k === "a" || k === "A") { taster.venstre = true; if (iSpil) e.preventDefault(); }
+  else if (k === "ArrowRight" || k === "d" || k === "D") { taster.hoejre = true; if (iSpil) e.preventDefault(); }
+  else if (k === "ArrowUp" || k === " " || k === "Spacebar" || k === "w" || k === "W") { if (iSpil) { e.preventDefault(); if (!e.repeat) hop(); } }
+  else if (k === "Enter") { if (tilstand === "menu" || tilstand === "slut") { e.preventDefault(); startLoeb(); } }
+});
+window.addEventListener("keyup", function (e) {
+  const k = e.key;
+  if (k === "ArrowLeft" || k === "a" || k === "A") taster.venstre = false;
+  else if (k === "ArrowRight" || k === "d" || k === "D") taster.hoejre = false;
+});
+window.addEventListener("blur", function () { taster.venstre = false; taster.hoejre = false; pegere.clear(); });
+canvas.addEventListener("pointerdown", function (e) { e.preventDefault(); pegere.set(e.pointerId, { x: e.clientX, y: e.clientY, bundY: e.clientY, startTid: Date.now(), swipe: false }); });
+canvas.addEventListener("pointermove", function (e) {
+  const p = pegere.get(e.pointerId); if (!p) return; e.preventDefault();
+  p.x = e.clientX; p.y = e.clientY; if (p.y > p.bundY) p.bundY = p.y;
+  const op = p.bundY - p.y;
+  if (op > 14 && Date.now() - p.startTid < 250) p.swipe = true;
+  if (op > SWIPE_PX) { hop(); p.bundY = p.y; p.swipe = true; }
+});
+function slipPeger(e) { pegere.delete(e.pointerId); }
+canvas.addEventListener("pointerup", slipPeger); canvas.addEventListener("pointercancel", slipPeger); canvas.addEventListener("pointerleave", slipPeger);
+canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+
+/* ---------- Effekter ---------- */
+function spawn(x, y, n, farver, kraft, o) {
+  o = o || {};
+  for (let i = 0; i < n && partikler.length < 450; i++) {
+    const v = o.vinkel !== undefined ? o.vinkel + (Math.random() - 0.5) * (o.sprednig || 1) : Math.random() * 6.2832, f = (0.3 + Math.random() * 0.7) * kraft;
+    const liv = (o.liv || 0.6) * (0.6 + Math.random() * 0.7);
+    partikler.push({ x: x, y: y, vx: Math.cos(v) * f, vy: Math.sin(v) * f - kraft * (o.op === undefined ? 0.5 : o.op), g: o.g === undefined ? 700 : o.g,
+      liv: liv, max: liv, str: (o.str || 3) * (0.6 + Math.random() * 0.8), farve: farver[Math.floor(Math.random() * farver.length)], form: o.form || 0, krymp: !!o.krymp, bag: !!o.bag });
+  }
+}
+function stoevSky(n) {
+  spawn(spilSkala.x, spilSkala.y + spilSkala.r * 0.15, n, ["#ffffff", "#fff0f7", "#ffe3f0"], 120, { op: 0.9, g: 80, liv: 0.7, str: 5, krymp: true, bag: true });
+}
+function lavKrummer(antal, farver, kraft) { spawn(spilSkala.x, spilSkala.y - spilSkala.r * 0.5, antal, farver, kraft, { str: 4, liv: 0.9 }); }
+
+function stoed() {
+  bidder--;
+  shake = 1;
+  if (bidder <= 0) {
+    bidder = 0;
+    lavKrummer(60, ["#d79a55", STIL[donut.id].g1, STIL[donut.id].g2, "#f1c98f"], 420);
+    afslut("krummer");
+  } else {
+    lavKrummer(16, ["#d79a55", STIL[donut.id].g1, "#f1c98f"], 260);
+    blink = (donut.evne === "blink" ? 2 : 1) * BLINK_TID;
+  }
+}
+function afslut(aarsag) {
+  tilstand = "slutter"; slutTid = 0; slutAarsag = aarsag;
+  if (aarsag === "flod") { shake = 0.7; spawn(spilSkala.x, spilSkala.y, 40, ["#6b3a1e", "#8a5230", "#4e2812"], 380, { op: 1.1, str: 5, liv: 1.0 }); }
+  const m = Math.floor(kmNu());
+  nyRekord = m > gemt.rekord;
+  if (nyRekord) gemt.rekord = m;
+  gemt.donuts += samlet;
+  gemNu();
+}
+function visSlut() {
+  tilstand = "slut";
+  el("slutTitel").textContent = slutAarsag === "flod" ? "Plask! Lige i chokoladefloden" : "Donutten smuldrede!";
+  el("slutNyRekord").style.display = nyRekord ? "block" : "none";
+  slutVaerdier = { m: Math.floor(kmNu()), d: samlet, i: gemt.donuts };
+  slutAnim = 0;
+  skrivSlut(0);
+  visSkaerm("slut");
+}
+function skrivSlut(k) {
+  const v = slutVaerdier;
+  el("slutMeter").textContent = "Du kørte " + tal(Math.floor(v.m * k)) + " m";
+  el("slutDonuts").textContent = "Du samlede " + tal(Math.floor(v.d * k)) + (Math.floor(v.d * k) === 1 ? " donut" : " donuts");
+  el("slutIalt").textContent = "Du har nu " + tal(Math.floor((v.i - v.d) + v.d * k)) + " donuts";
+}
+
+/* ---------- Opdatering ---------- */
+function opdaterPartikler(dt) {
+  for (let i = partikler.length - 1; i >= 0; i--) {
+    const p = partikler[i]; p.liv -= dt;
+    if (p.liv <= 0) { partikler.splice(i, 1); continue; }
+    p.vy += p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+  }
+  for (let i = tekster.length - 1; i >= 0; i--) {
+    const t = tekster[i]; t.liv -= dt;
+    if (t.liv <= 0) { tekster.splice(i, 1); continue; }
+    t.y -= 70 * dt;
+  }
+}
+
+function kameraFoelg(dt) {
+  const m = klem(dt * 8, 0, 1), maal = grundY(zp) + KAMERA_HOEJDE + hopH() * 0.3;
+  camY += (maal - camY) * m;
+  camX += (playerX * 0.6 - camX) * klem(dt * 9, 0, 1);
+}
+function ryd() {
+  const gl = Math.floor((zp - KAMERA_BAGUD) / SEG) - 8;
+  while (segs.length && segBase < gl) { segs.shift(); segBase++; }
+  byggTil(zp + SEG_SYN * SEG + 40);
+}
+
+function opdater(dt) {
+  tid += dt;
+  opdaterPartikler(dt);
+  if (shake > 0) shake = Math.max(0, shake - dt * 2.8);
+  if (landSq > 0) landSq = Math.max(0, landSq - dt * 5);
+  if (popT > 0) popT = Math.max(0, popT - dt * 4);
+  if (zoneBanner) { zoneBanner.t += dt; if (zoneBanner.t > 2.6) zoneBanner = null; }
+
+  if (tilstand === "menu" || tilstand === "garage") { // rolig kørsel i baggrunden
+    const f = 9; zp += f * dt; fartNu = f; rot += dt * 2.2;
+    const s = seg(Math.floor(zp / SEG)); if (s) bgShift += s.curve * f * 420 * dt;
+    playerX = Math.sin(tid * 0.7) * 2.2; spillerVX = Math.cos(tid * 0.7) * 1.5; lean = spillerVX * 0.05 - (s ? s.curve * 6 : 0);
+    ryd(); kameraFoelg(dt);
+    return;
+  }
+  if (tilstand === "slut") { if (slutAnim < 1.4) { slutAnim += dt; skrivSlut(smooth(slutAnim / 1.2)); } return; }
+  if (tilstand === "slutter") { slutTid += dt; if (slutTid > 1.1) visSlut(); return; }
+  if (tilstand === "nedtaelling") {
+    nedTid += dt; rot += dt * 0.6; kameraFoelg(dt);
+    if (nedTid >= 2.4) { tilstand = "koerer"; zoneBanner = { txt: ZONER[0].navn, t: 0 }; }
+    return;
+  }
+
+  // ----- tilstand "koerer" -----
+  nedTid += dt;
+  const foer = zp, sP = seg(Math.floor(zp / SEG));
+  const maalMul = sP && sP.boost ? FARTFELT_FART : (sP && sP.sticky ? KLISTRET_FART : 1);
+  speedMul += (maalMul - speedMul) * klem(dt * (maalMul > speedMul ? 9 : 4), 0, 1);
+  const fart = aktuelFart(); fartNu = fart;
+  zp += fart * dt;
+  rot += fart * dt * 0.34;
+  if (sP) bgShift += sP.curve * fart * 420 * dt;
+
+  const maal = styreRetning() * STYRE_FART * (donut.evne === "styring" ? 1.3 : 1);
+  spillerVX += (maal - spillerVX) * Math.min(1, dt * 14);
+  playerX += spillerVX * dt;
+  const kant = (sP ? BANE_HALV * sP.w : BANE_HALV) - SPILLER_R;
+  if (playerX < -kant) { playerX = -kant; spillerVX = 0; }
+  if (playerX > kant) { playerX = kant; spillerVX = 0; }
+  lean += ((klem(spillerVX / STYRE_FART, -1, 1)) * 0.22 - (sP ? sP.curve * 6 : 0) - lean) * klem(dt * 10, 0, 1);
+
+  // hop og landing
+  if (hopTid > 0) {
+    hopTid -= dt;
+    if (hopTid <= 0) { hopTid = 0; landSq = 1; hopStartH = 0; stoevSky(hopMax > 2 ? 26 : 12); if (hopMax > 2) shake = Math.max(shake, 0.35); }
+  }
+  if (hopTid <= 0) { // rampe: lancér ved kanten
+    for (let i = Math.floor(foer / SEG); i <= Math.floor(zp / SEG); i++) {
+      const s = seg(i);
+      if (s && s.lip && (s.i + 1) * SEG > foer && (s.i + 1) * SEG <= zp) {
+        hopVarighed = RAMPE_HOP_TID * (donut.evne === "superhop" ? 1.2 : 1); hopMax = RAMPE_HOEJDE; hopStartH = RAMPE_H; hopTid = hopVarighed;
+        spawn(spilSkala.x, spilSkala.y, 18, ["#ffe14d", "#ffffff", "#ff9f1c"], 300, { op: 0.8, form: 2, str: 4, g: 200 });
+      }
+    }
+  }
+  if (blink > 0) blink = Math.max(0, blink - dt);
+  const iLuften = hopTid > 0, hh = hopH();
+
+  const i0 = Math.floor(foer / SEG) - 3, i1 = Math.floor(zp / SEG) + 3;
+  for (let i = i0; i <= i1 && tilstand === "koerer"; i++) {
+    const s = seg(i); if (!s) continue;
+    if (s.flod && !iLuften && s.i * SEG <= zp && (s.i + 1) * SEG >= foer) { afslut("flod"); break; }
+    for (let j = 0; j < s.ting.length; j++) {
+      const t = s.ting[j];
+      if (t.tp === "donut") {
+        if (t.vaek) continue;
+        if (donut.evne === "magnet") {
+          const dd = t.pos - zp, dx = playerX - t.x;
+          if (dd > -1 && dd < MAGNET_AFSTAND && Math.abs(dx) < MAGNET_AFSTAND) t.x += dx * Math.min(1, dt * 7);
+        }
+        if (Math.abs(t.x - playerX) < 1.15 && Math.abs(t.h - hh) < 1.5 && t.pos - 0.8 <= zp && t.pos + 0.8 >= foer) {
+          t.vaek = true;
+          const gevinst = donut.evne === "dobbelt" ? 2 : 1;
+          samlet += gevinst; popT = 1;
+          spawn(spilSkala.x, spilSkala.y - spilSkala.r * (1 + t.h), 10, ["#ffffff", "#ffe14d", "#ff8fc7"], 200, { form: 2, str: 3.5, g: 300, liv: 0.5 });
+          tekster.push({ x: spilSkala.x, y: spilSkala.y - spilSkala.r * 2.4, txt: "+" + gevinst, liv: 0.9, farve: donut.evne === "dobbelt" ? "#ffd23f" : "#fff4a8" });
+        }
+      } else if (t.tp === "slik") {
+        if (!t.ramt && blink <= 0 && Math.abs(t.x - playerX) < 0.55 + RAMME_R && t.pos - 0.6 <= zp && t.pos + 0.6 >= foer) { t.ramt = true; stoed(); }
+      } else if (t.tp === "lakrids") {
+        if (!t.ramt && blink <= 0 && !iLuften && playerX + RAMME_R > t.x1 && playerX - RAMME_R < t.x2 && t.pos - 0.5 <= zp && t.pos + 0.5 >= foer) { t.ramt = true; stoed(); }
+      }
+    }
+  }
+  if (tilstand !== "koerer") return;
+
+  if (donut.evne === "regnbue") { spor.push({ x: playerX, pos: zp }); while (spor.length && spor[0].pos < zp - 6) spor.shift(); }
+  stoevTimer -= dt;
+  if (!iLuften && stoevTimer <= 0) { stoevTimer = 0.07; stoevSky(1); if (sP && sP.boost) spawn(spilSkala.x, spilSkala.y, 3, ["#ffe14d", "#ffffff"], 160, { form: 2, str: 3, g: 200, op: 0.6 }); }
+  const zn = Math.floor(zp / ZONE_LAENGDE);
+  if (zn > sidsteZone) { sidsteZone = zn; zoneBanner = { txt: ZONER[zn % ZONER.length].navn, t: 0 }; }
+  ryd(); kameraFoelg(dt);
+}
+
+/* ---------- Garagen ---------- */
+function sætForhaand(id) {
+  forhaandId = id;
+  const d = findDonut(id);
+  el("fhNavn").textContent = d.navn;
+  el("fhInfo").innerHTML = "Pris: " + (d.pris === 0 ? "gratis" : tal(d.pris) + " donuts") + "<br>Bidder: " + d.bidder + "<br>Ekstra: " + d.ekstra;
+}
+function visGarage() {
+  nulstilScene(true);
+  tilstand = "garage";
+  el("garageDonuts").textContent = "Du har " + tal(gemt.donuts) + " donuts";
+  const gitter = el("gitter"); gitter.innerHTML = "";
+  sætForhaand(gemt.valgt);
+  DONUTS.forEach(function (d) {
+    const ejet = gemt.ejede.indexOf(d.id) >= 0, valgt = gemt.valgt === d.id;
+    const kort = document.createElement("div");
+    kort.className = "kort" + (valgt ? " valgt" : "") + (ejet ? "" : " laast");
+    kort.addEventListener("mouseenter", function () { sætForhaand(d.id); });
+    kort.addEventListener("click", function () { sætForhaand(d.id); });
+    const ikon = document.createElement("canvas"); ikon.width = 150; ikon.height = 150;
+    const ik = ikon.getContext("2d");
+    if (ik) tegnDonut3D(ik, 75, 68, 58, d, d.bidder, -0.6, { flat: 0.82, tykkelse: 11 });
+    kort.appendChild(ikon);
+    function linje(klasse, tekst) { const e = document.createElement("div"); e.className = klasse; e.textContent = tekst; kort.appendChild(e); }
+    linje("navn", d.navn);
+    linje("linje", "Pris: " + (d.pris === 0 ? "gratis" : tal(d.pris) + " donuts"));
+    linje("linje", "Bidder: " + d.bidder);
+    linje("linje ekstra", "Ekstra: " + d.ekstra);
+    const knap = document.createElement("button");
+    if (valgt) { knap.textContent = "Valgt"; knap.disabled = true; knap.className = "er-valgt"; }
+    else if (ejet) { knap.textContent = "Vælg"; knap.addEventListener("click", function (e) { e.stopPropagation(); gemt.valgt = d.id; gemNu(); visGarage(); }); }
+    else if (gemt.donuts >= d.pris) {
+      knap.textContent = "Køb";
+      knap.addEventListener("click", function (e) {
+        e.stopPropagation();
+        if (gemt.donuts < d.pris || gemt.ejede.indexOf(d.id) >= 0) return;
+        gemt.donuts -= d.pris; gemt.ejede.push(d.id); gemt.valgt = d.id; gemNu(); visGarage();
+      });
+    } else { knap.textContent = "Mangler " + tal(d.pris - gemt.donuts); knap.disabled = true; }
+    kort.appendChild(knap); gitter.appendChild(kort);
+  });
+  visSkaerm("garage");
+}
+
+el("knapStart").addEventListener("click", startLoeb);
+el("knapIgen").addEventListener("click", startLoeb);
+el("knapGarage").addEventListener("click", visGarage);
+el("knapGarage2").addEventListener("click", visGarage);
+el("knapTilbage").addEventListener("click", tilMenu);
+
+/* ---------- Spil-løkken ---------- */
+let sidsteTid = 0;
+function loekke(nu) {
+  const dt = sidsteTid ? Math.min(0.05, Math.max(0, (nu - sidsteTid) / 1000)) : 0;
+  sidsteTid = nu;
+  opdater(dt);
+  tegn();
+  window.requestAnimationFrame(loekke);
+}
+window.addEventListener("resize", tilpas);
+window.addEventListener("orientationchange", tilpas);
+
+hentGemt();
+tilpas();
+tilMenu();
+window.requestAnimationFrame(loekke);
+})();
+</script>
+</body>
+</html>
